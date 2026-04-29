@@ -7,5 +7,5 @@ new core idea :
 The aim of this project is to design and develop an adaptable web-based Irish Sign Language glossary platform that enables organisations to organise ISL signs into domain-specific collections for practical communication and accessibility support.
 
 project will use two focus areas:
-College / Computing
+College / Computing,
 Retail / Customer Service
