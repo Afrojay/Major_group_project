@@ -1,4 +1,4 @@
-# Major_group_project
+# Design and Development of an Adaptable Web-Based Irish Sign Language Glossary Platform for Domain-Specific Accessibility
 
 We are building a prototype web platform for a focused Irish Sign Language glossary. The glossary will contain a selected set of beginner-friendly ISL signs, organised into categories such as greetings, people, places, and daily life. Each sign will have a dedicated entry containing a video demonstration, written label, short description, category, and optional learning notes. The purpose is not to replace a full ISL dictionary, but to demonstrate how an accessible, searchable, and structured digital glossary could support beginner learners and people who need a quick ISL reference tool.
 
