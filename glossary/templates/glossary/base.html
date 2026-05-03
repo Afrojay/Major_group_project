@@ -1,0 +1,30 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}ISL Glossary Platform{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'glossary/css/styles.css' %}">
+</head>
+<body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <header class="site-header">
+        <nav class="nav" aria-label="Main navigation">
+            <a class="brand" href="{% url 'glossary:home' %}">ISL Glossary Platform</a>
+            {% if organisation %}
+                <a href="{{ organisation.get_absolute_url }}">{{ organisation.name }}</a>
+                <a href="{% url 'glossary:quick_reference' organisation.slug %}">Quick Reference</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main id="main-content" class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <p>Prototype for an adaptable Irish Sign Language glossary platform. Not a replacement for qualified ISL interpreters.</p>
+    </footer>
+</body>
+</html>
