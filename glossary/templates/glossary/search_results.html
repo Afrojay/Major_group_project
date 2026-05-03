@@ -1,0 +1,25 @@
+{% extends 'glossary/base.html' %}
+
+{% block title %}Search results{% endblock %}
+
+{% block content %}
+<p><a href="{{ organisation.get_absolute_url }}">Back to {{ organisation.name }}</a></p>
+<h1>Search {{ organisation.name }}</h1>
+<form method="get">
+{{ form.q.label_tag }}
+{{ form.q }}
+<button type="submit">Search</button>
+</form>
+{% if query %}
+<h2>Results for "{{ query }}"</h2>
+{% endif %}
+{% if results %}
+<ul class="result-list">
+{% for sign in results %}
+<li><a href="{{ sign.get_absolute_url }}">{{ sign.term }}</a> - {{ sign.category.name }}</li>
+{% endfor %}
+</ul>
+{% else %}
+<p>No matching signs found.</p>
+{% endif %}
+{% endblock %}
