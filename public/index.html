@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISL Dictionary - Irish Sign Language</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <h1>ISL Dictionary</h1>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search signs...">
+                <button onclick="searchSigns()" class="btn btn-primary">Search</button>
+            </div>
+            <nav>
+                <div id="authNav"></div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h2>Welcome to the Irish Sign Language Dictionary</h2>
+            <p>Explore and learn Irish Sign Language with our comprehensive collection of signs</p>
+        </section>
+
+        <section class="filters">
+            <div class="filter-group">
+                <label for="categoryFilter">Category:</label>
+                <select id="categoryFilter" onchange="filterSigns()">
+                    <option value="all">All Categories</option>
+                    <option value="Greetings">Greetings</option>
+                    <option value="People">People</option>
+                    <option value="Actions">Actions</option>
+                    <option value="Education">Education</option>
+                    <option value="Food & Drink">Food & Drink</option>
+                    <option value="Places">Places</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="difficultyFilter">Difficulty:</label>
+                <select id="difficultyFilter" onchange="filterSigns()">
+                    <option value="all">All Levels</option>
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                </select>
+            </div>
+        </section>
+
+        <section id="signsGrid" class="signs-grid">
+            <div class="loading">Loading signs...</div>
+        </section>
+
+        <section class="cta-section">
+            <h3>Can't find a sign?</h3>
+            <p>Request a new sign to be added to our dictionary</p>
+            <a href="request.html" class="btn btn-secondary">Request a Sign</a>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 ISL Dictionary. Educational prototype.</p>
+    </footer>
+
+    <script src="app.js"></script>
+    <script>
+        async function loadSigns() {
+            try {
+                const response = await fetch('/api/signs');
+                const signs = await response.json();
+                displaySigns(signs);
+            } catch (error) {
+                document.getElementById('signsGrid').innerHTML = '<p class="error">Failed to load signs</p>';
+            }
+        }
+
+        function displaySigns(signs) {
+            const grid = document.getElementById('signsGrid');
+            
+            if (signs.length === 0) {
+                grid.innerHTML = '<p class="no-results">No signs found</p>';
+                return;
+            }
+            
+            grid.innerHTML = signs.map(sign => `
+                <div class="sign-card">
+                    <img src="${sign.image_url}" alt="${sign.word}" class="sign-image">
+                    <div class="sign-content">
+                        <h3>${sign.word}</h3>
+                        <span class="badge badge-${sign.difficulty.toLowerCase()}">${sign.difficulty}</span>
+                        <span class="badge">${sign.category}</span>
+                        <p>${sign.description.substring(0, 100)}...</p>
+                        <a href="sign-detail.html?id=${sign._id}" class="btn btn-small">View Details</a>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function searchSigns() {
+            const query = document.getElementById('searchInput').value;
+            const category = document.getElementById('categoryFilter').value;
+            const difficulty = document.getElementById('difficultyFilter').value;
+            
+            try {
+                const params = new URLSearchParams();
+                if (query) params.append('q', query);
+                if (category !== 'all') params.append('category', category);
+                if (difficulty !== 'all') params.append('difficulty', difficulty);
+                
+                const response = await fetch(`/api/signs/search?${params}`);
+                const signs = await response.json();
+                displaySigns(signs);
+            } catch (error) {
+                document.getElementById('signsGrid').innerHTML = '<p class="error">Search failed</p>';
+            }
+        }
+
+        function filterSigns() {
+            searchSigns();
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchSigns();
+            }
+        });
+
+        loadSigns();
+        checkAuth();
+    </script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - ISL Dictionary</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <h1>ISL Dictionary - Admin Panel</h1>
+            <nav>
+                <a href="index.html" class="btn btn-small">← Back to Home</a>
+                <div id="authNav"></div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <h2>Review Sign Requests</h2>
+        <div id="requestsList" class="requests-list">
+            <div class="loading">Loading requests...</div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 ISL Dictionary. Educational prototype.</p>
+    </footer>
+
+    <script src="app.js"></script>
+    <script>
+        async function loadRequests() {
+            try {
+                const response = await fetch('/api/requests');
+                
+                if (response.status === 403) {
+                    document.getElementById('requestsList').innerHTML = 
+                        '<p class="error">Access denied. Admin privileges required.</p>';
+                    return;
+                }
+                
+                const requests = await response.json();
+                displayRequests(requests);
+            } catch (error) {
+                document.getElementById('requestsList').innerHTML = 
+                    '<p class="error">Failed to load requests</p>';
+            }
+        }
+
+        function displayRequests(requests) {
+            const container = document.getElementById('requestsList');
+            
+            if (requests.length === 0) {
+                container.innerHTML = '<p class="no-results">No pending requests</p>';
+                return;
+            }
+            
+            container.innerHTML = requests.map(request => `
+                <div class="request-card ${request.status}">
+                    <div class="request-header">
+                        <h3>${request.word}</h3>
+                        <span class="badge badge-${request.status}">${request.status}</span>
+                    </div>
+                    <div class="request-details">
+                        <p><strong>Category:</strong> ${request.category}</p>
+                        <p><strong>Description:</strong> ${request.description}</p>
+                        <p><strong>Requested by:</strong> ${request.contributor_name} (${request.contributor_email})</p>
+                        <p><strong>Date:</strong> ${new Date(request.created_at).toLocaleDateString()}</p>
+                    </div>
+                    ${request.status === 'pending' ? `
+                        <div class="request-actions">
+                            <button onclick="approveRequest('${request._id}')" class="btn btn-success">Approve</button>
+                            <button onclick="rejectRequest('${request._id}')" class="btn btn-danger">Reject</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        async function approveRequest(id) {
+            if (!confirm('Approve this request?')) return;
+            
+            try {
+                const response = await fetch(`/api/requests/${id}/approve`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    alert('Request approved!');
+                    loadRequests();
+                } else {
+                    alert('Failed to approve request');
+                }
+            } catch (error) {
+                alert('Network error');
+            }
+        }
+
+        async function rejectRequest(id) {
+            if (!confirm('Reject this request?')) return;
+            
+            try {
+                const response = await fetch(`/api/requests/${id}/reject`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    alert('Request rejected');
+                    loadRequests();
+                } else {
+                    alert('Failed to reject request');
+                }
+            } catch (error) {
+                alert('Network error');
+            }
+        }
+
+        loadRequests();
+        checkAuth();
+    </script>
+</body>
+</html>

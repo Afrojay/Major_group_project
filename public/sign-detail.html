@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Details - ISL Dictionary</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <h1>ISL Dictionary</h1>
+            <nav>
+                <a href="index.html" class="btn btn-small">← Back to Home</a>
+                <div id="authNav"></div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div id="signDetail" class="sign-detail-container">
+            <div class="loading">Loading sign details...</div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 ISL Dictionary. Educational prototype.</p>
+    </footer>
+
+    <script src="app.js"></script>
+    <script>
+        async function loadSignDetail() {
+            const params = new URLSearchParams(window.location.search);
+            const signId = params.get('id');
+            
+            if (!signId) {
+                document.getElementById('signDetail').innerHTML = '<p class="error">Sign not found</p>';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/signs/${signId}`);
+                if (!response.ok) {
+                    throw new Error('Sign not found');
+                }
+                
+                const sign = await response.json();
+                displaySignDetail(sign);
+            } catch (error) {
+                document.getElementById('signDetail').innerHTML = '<p class="error">Failed to load sign details</p>';
+            }
+        }
+
+        function displaySignDetail(sign) {
+            const container = document.getElementById('signDetail');
+            container.innerHTML = `
+                <div class="sign-detail">
+                    <div class="sign-header">
+                        <h2>${sign.word}</h2>
+                        <div class="sign-badges">
+                            <span class="badge badge-${sign.difficulty.toLowerCase()}">${sign.difficulty}</span>
+                            <span class="badge">${sign.category}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="sign-media">
+                        <img src="${sign.image_url}" alt="${sign.word}" class="sign-detail-image" style="width: 100%; max-width: 600px; margin: 0 auto; display: block;">
+                    </div>
+                    
+                    <div class="sign-description">
+                        <h3>How to Sign</h3>
+                        <p>${sign.description}</p>
+                    </div>
+                    
+                    <div class="sign-actions">
+                        <a href="index.html" class="btn btn-secondary">Back to Dictionary</a>
+                    </div>
+                </div>
+            `;
+        }
+
+        loadSignDetail();
+        checkAuth();
+    </script>
+</body>
+</html>
