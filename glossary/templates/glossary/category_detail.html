@@ -1,0 +1,22 @@
+{% extends 'glossary/base.html' %}
+
+{% block title %}Category | ISL Glossary{% endblock %}
+
+{% block content %}
+<p><a href="{{ organisation.get_absolute_url }}">Back to {{ organisation.name }}</a></p>
+<h1>{{ category.name }}</h1>
+<p>{{ category.description }}</p>
+
+{% if signs %}
+<div class="card-grid">
+{% for sign in signs %}
+<article class="card">
+<h2><a href="{{ sign.get_absolute_url }}">{{ sign.term }}</a></h2>
+<p>{{ sign.description }}</p>
+</article>
+{% endfor %}
+</div>
+{% else %}
+<p>No signs have been added to this category yet.</p>
+{% endif %}
+{% endblock %}
