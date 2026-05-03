@@ -1,0 +1,25 @@
+{% extends 'glossary/base.html' %}
+
+{% block title %}Sign detail{% endblock %}
+
+{% block content %}
+<p><a href="{{ sign.category.get_absolute_url }}">Back to category</a></p>
+<h1>{{ sign.term }}</h1>
+<p>Category: {{ sign.category.name }}</p>
+<h2>Video link</h2>
+<p><a href="{{ sign.video_url }}">Open video</a></p>
+<h2>Description</h2>
+<p>{{ sign.description }}</p>
+{% if sign.usage_context %}
+<h2>Usage context</h2>
+<p>{{ sign.usage_context }}</p>
+{% endif %}
+{% if related_signs %}
+<h2>Related signs</h2>
+<ul>
+{% for related in related_signs %}
+<li><a href="{{ related.get_absolute_url }}">{{ related.term }}</a></li>
+{% endfor %}
+</ul>
+{% endif %}
+{% endblock %}
