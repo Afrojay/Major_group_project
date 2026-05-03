@@ -1,0 +1,26 @@
+{% extends 'glossary/base.html' %}
+
+{% block title %}Home | ISL Glossary Platform{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <h1>Accessible and Adaptable ISL Glossary Platform</h1>
+    <p>This prototype demonstrates one reusable Django platform that can support different organisation-specific Irish Sign Language glossaries.</p>
+</section>
+
+<section aria-labelledby="organisations-heading">
+    <h2 id="organisations-heading">Demo organisations</h2>
+    {% if organisations %}
+        <div class="card-grid">
+            {% for organisation in organisations %}
+                <article class="card">
+                    <h3><a href="{{ organisation.get_absolute_url }}">{{ organisation.name }}</a></h3>
+                    <p>{{ organisation.description }}</p>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No organisations have been added yet. Add sample data with <code>python manage.py load_sample_data</code>.</p>
+    {% endif %}
+</section>
+{% endblock %}
