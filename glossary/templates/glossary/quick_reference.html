@@ -1,0 +1,21 @@
+{% extends 'glossary/base.html' %}
+
+{% block title %}Quick reference{% endblock %}
+
+{% block content %}
+<p><a href="{{ organisation.get_absolute_url }}">Back to {{ organisation.name }}</a></p>
+<h1>Quick reference signs</h1>
+<p>Commonly needed signs for this organisation or service setting.</p>
+{% if signs %}
+<div class="card-grid">
+{% for sign in signs %}
+<article class="card">
+<h2><a href="{{ sign.get_absolute_url }}">{{ sign.term }}</a></h2>
+<p>{{ sign.description }}</p>
+</article>
+{% endfor %}
+</div>
+{% else %}
+<p>No quick reference signs have been marked yet.</p>
+{% endif %}
+{% endblock %}
