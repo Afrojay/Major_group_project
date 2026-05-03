@@ -1,0 +1,49 @@
+{% extends 'glossary/base.html' %}
+
+{% block title %}{{ organisation.name }} | ISL Glossary{% endblock %}
+
+{% block content %}
+<section class="hero" style="--accent: {{ organisation.theme_colour|default:'#1d4ed8' }}">
+    <h1>{{ organisation.name }}</h1>
+    <p>{{ organisation.description }}</p>
+</section>
+
+<section class="search-panel" aria-labelledby="search-heading">
+    <h2 id="search-heading">Search this glossary</h2>
+    <form action="{% url 'glossary:search_results' organisation.slug %}" method="get">
+        {{ search_form.q.label_tag }}
+        {{ search_form.q }}
+        <button type="submit">Search</button>
+    </form>
+</section>
+
+<section aria-labelledby="quick-heading">
+    <h2 id="quick-heading">Quick reference signs</h2>
+    {% if quick_signs %}
+        <ul class="link-list">
+            {% for sign in quick_signs %}
+                <li><a href="{{ sign.get_absolute_url }}">{{ sign.term }}</a></li>
+            {% endfor %}
+        </ul>
+        <p><a class="button-link" href="{% url 'glossary:quick_reference' organisation.slug %}">View all quick reference signs</a></p>
+    {% else %}
+        <p>No quick reference signs have been marked yet.</p>
+    {% endif %}
+</section>
+
+<section aria-labelledby="categories-heading">
+    <h2 id="categories-heading">Categories</h2>
+    {% if categories %}
+        <div class="card-grid">
+            {% for category in categories %}
+                <article class="card">
+                    <h3><a href="{{ category.get_absolute_url }}">{{ category.name }}</a></h3>
+                    <p>{{ category.description|default:'Browse signs in this category.' }}</p>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No categories have been added yet.</p>
+    {% endif %}
+</section>
+{% endblock %}
