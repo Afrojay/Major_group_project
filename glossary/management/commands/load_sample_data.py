@@ -22,6 +22,12 @@ class Command(BaseCommand):
             description='A sample glossary for retail staff who need quick access to common customer service signs.',
             theme_colour='#047857',
         )
+        healthcare = self.create_organisation(
+            name='Healthcare Reception',
+            slug='healthcare-reception',
+            description='A sample glossary for reception or front-desk healthcare settings, focused on common appointment, waiting room and direction terms.',
+            theme_colour='#be123c',
+        )
 
         college_categories = {
             'programming': 'Programming',
@@ -37,9 +43,17 @@ class Command(BaseCommand):
             'product-questions': 'Product Questions',
             'customer-support': 'Customer Support',
         }
+        healthcare_categories = {
+            'appointments': 'Appointments',
+            'waiting-room': 'Waiting Room',
+            'departments': 'Departments',
+            'directions': 'Directions',
+            'basic-support': 'Basic Support',
+        }
 
         college_cats = self.create_categories(college, college_categories)
         retail_cats = self.create_categories(retail, retail_categories)
+        healthcare_cats = self.create_categories(healthcare, healthcare_categories)
 
         self.create_sign(college, college_cats['student-support'], 'Login', 'login', 'A common term used when accessing college systems.', True)
         self.create_sign(college, college_cats['student-support'], 'Password', 'password', 'Used when discussing account access or password reset support.', True)
@@ -56,6 +70,14 @@ class Command(BaseCommand):
         self.create_sign(retail, retail_cats['payments'], 'Receipt', 'receipt', 'Used when asking whether a customer needs a receipt.', True)
         self.create_sign(retail, retail_cats['refunds'], 'Refund', 'refund', 'Used when discussing returned items or refunds.', True)
         self.create_sign(retail, retail_cats['customer-support'], 'Help', 'help', 'Used when asking whether the customer needs assistance.', True)
+
+        self.create_sign(healthcare, healthcare_cats['appointments'], 'Appointment', 'appointment', 'Used when discussing a booked visit or appointment time.', True)
+        self.create_sign(healthcare, healthcare_cats['waiting-room'], 'Please Wait', 'please-wait', 'Used when asking a person to wait before being called.', True)
+        self.create_sign(healthcare, healthcare_cats['directions'], 'Reception', 'reception', 'Used when directing someone to the reception desk.', True)
+        self.create_sign(healthcare, healthcare_cats['departments'], 'Doctor', 'doctor', 'Used when discussing seeing or speaking with a doctor.', True)
+        self.create_sign(healthcare, healthcare_cats['departments'], 'Nurse', 'nurse', 'Used when discussing nursing support or a nurse-led appointment.', True)
+        self.create_sign(healthcare, healthcare_cats['directions'], 'Toilet', 'toilet', 'Used when giving basic directions inside a building.', False)
+        self.create_sign(healthcare, healthcare_cats['basic-support'], 'Help', 'help', 'Used when a person needs assistance from staff.', True)
 
         self.stdout.write(self.style.SUCCESS('Sample ISL glossary data loaded.'))
 
