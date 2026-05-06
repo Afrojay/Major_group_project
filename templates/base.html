@@ -6,12 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}ISL Glossary Platform{% endblock %}</title>
   
-  <!-- Legacy CSS (will be replaced by Tailwind from Vite) -->
   <link rel="stylesheet" href="{% static 'glossary/styles.css' %}">
-  
-  <!-- Compiled frontend assets -->
-  <link rel="stylesheet" href="{% static 'dist/css/index-Bz5TiWIZ.css' %}">
-  <script type="module" src="{% static 'dist/js/index-BR6MGbN6.js' %}"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
@@ -59,9 +54,6 @@
       </details>
     </nav>
   </header>
-
-  <!-- Vue app mount point -->
-  <div id="app"></div>
 
   <main id="main" class="page">
     {% if messages %}

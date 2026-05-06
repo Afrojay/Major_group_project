@@ -8,22 +8,24 @@ This Django prototype demonstrates an organisation-specific ISL glossary that ca
 
 - Organisation-specific glossary landing pages
 - Categories linked to organisations
-- Sign entries with English term, category, description, usage context, tags, and video URL
-- Search and browse within the selected organisation
+- Sign entries with English term, category, description, usage context, tags, thumbnail URL, transcript support, official publication flag, and video URL
+- Search, A-Z filtering, category navigation, and browse within the selected organisation
 - Django staff login
 - Staff profiles linked to one organisation with staff, manager, and glossary manager roles
 - Staff dashboard with favourites, request history, recent signs, and portal-style placeholders
+- Simple portal items for prototype tasks, calendar notes, appointments, and access notes
 - Login redirects staff to their own organisation dashboard
 - Organisation dashboards show simple role/domain placeholder panels such as retail tasks, college calendar notes, healthcare reception checks, and manager to-dos
 - Staff favourites for signs in their own organisation
 - Staff and visitor missing-sign requests
 - Manager request review dashboard
 - Request statuses: Pending manager review, Needs clarification, Manager approved, Sent to interpreter, Completed, Rejected
+- Manager approval and interpreter notes on sign requests
 - Django admin content management
 
 ## Not implemented
 
-This is not a complete national ISL dictionary, a replacement for qualified ISL interpreters, a full ISL course, formal Deaf awareness training, or a production SaaS system. Production security hardening, audit logging, data export, billing, and full tenant administration remain future work.
+This is not a complete national ISL dictionary, a replacement for qualified ISL interpreters, a full ISL course, formal Deaf awareness training, or a production SaaS system. Production security hardening, audit logging, email automation, data export, billing, and full tenant administration remain future work.
 
 Healthcare examples are included only as prototype service-access vocabulary. They are not clinical guidance and do not replace professional communication support.
 

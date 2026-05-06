@@ -3,18 +3,43 @@
 {% block title %}{{ organisation.name }} | ISL Glossary{% endblock %}
 
 {% block content %}
-<section class="hero org-hero" style="--accent: {{ organisation.safe_theme_colour }}">
+<section class="hero org-hero glossary-hero {% if selected_category %}category-mode{% endif %}" style="--accent: {{ organisation.safe_theme_colour }}">
   <div class="org-identity">
     {% if organisation.logo_url %}
       <img class="org-logo" src="{{ organisation.logo_url }}" alt="{{ organisation.name }} logo">
     {% endif %}
     <div>
-      <p class="eyebrow">Organisation glossary</p>
-      <h1>{{ organisation.name }}</h1>
+      <p class="eyebrow">
+        {% if selected_category %}
+          {{ organisation.name }} category
+        {% else %}
+          Organisation glossary
+        {% endif %}
+      </p>
+      <h1>
+        {% if selected_category %}
+          {{ selected_category.name }} signs
+        {% else %}
+          {{ organisation.name }}
+        {% endif %}
+      </h1>
     </div>
   </div>
-  {% if organisation.description %}
+  {% if selected_category and selected_category.description %}
+    <p>{{ selected_category.description }}</p>
+  {% elif selected_category %}
+    <p>Signs grouped for the {{ selected_category.name|lower }} context in {{ organisation.name }}.</p>
+  {% elif organisation.description %}
     <p>{{ organisation.description }}</p>
+  {% endif %}
+  {% if selected_category %}
+    <div class="hero-meta" aria-label="Current glossary view">
+      <span>{{ result_count }} signs in this view</span>
+      {% if query %}
+        <span>Search: "{{ query }}"</span>
+      {% endif %}
+      <a href="{{ organisation.get_absolute_url }}">View all categories</a>
+    </div>
   {% endif %}
   {% if organisation.contact_email %}
     <p class="contact-line">Contact: <a href="mailto:{{ organisation.contact_email }}">{{ organisation.contact_email }}</a></p>
@@ -33,74 +58,95 @@
   </div>
 </section>
 
-<form class="search" method="get" role="search">
-  <label for="q">Search this glossary</label>
-  <div>
-    <input id="q" name="q" value="{{ query }}" placeholder="Search term, context, tag, or category">
-    {% if selected_category_slug %}
-      <input type="hidden" name="category" value="{{ selected_category_slug }}">
+<div class="glossary-workspace" style="--accent: {{ organisation.safe_theme_colour }}">
+  <aside class="glossary-sidebar" aria-label="Glossary navigation">
+    <div class="sidebar-block">
+      <p class="eyebrow">Service areas</p>
+      <h2>Categories</h2>
+      <nav class="sidebar-list" aria-label="Category filters">
+        <a class="sidebar-link {% if not selected_category %}active{% endif %}" href="{% if query or selected_letter %}?{% if query %}q={{ query|urlencode }}{% if selected_letter %}&amp;{% endif %}{% endif %}{% if selected_letter %}letter={{ selected_letter }}{% endif %}{% else %}{{ organisation.get_absolute_url }}{% endif %}">
+          <span>All signs</span>
+          <strong>{{ total_sign_count }}</strong>
+        </a>
+        {% for category in categories %}
+          <a class="sidebar-link {% if selected_category.slug == category.slug %}active{% endif %}" href="?{% if query %}q={{ query|urlencode }}&amp;{% endif %}category={{ category.slug }}{% if selected_letter %}&amp;letter={{ selected_letter }}{% endif %}">
+            <span>{{ category.name }}</span>
+            <strong>{{ category.sign_count }}</strong>
+          </a>
+        {% endfor %}
+      </nav>
+    </div>
+
+    {% if quick_signs %}
+      <div class="sidebar-block">
+        <p class="eyebrow">Quick reference</p>
+        <h2>Useful signs</h2>
+        <div class="quick-list">
+          {% for sign in quick_signs %}
+            <a href="{{ sign.get_absolute_url }}">{{ sign.term }}</a>
+          {% endfor %}
+        </div>
+      </div>
     {% endif %}
-    <button type="submit">Search</button>
-  </div>
-</form>
+  </aside>
 
-<section class="filter-panel" aria-labelledby="category-filters-heading">
-  <h2 id="category-filters-heading">Filter by category</h2>
-  <div class="filter-actions">
-    <a class="filter-chip {% if not selected_category %}active{% endif %}" href="{{ organisation.get_absolute_url }}">All categories</a>
-    {% for category in categories %}
-      <a class="filter-chip {% if selected_category.slug == category.slug %}active{% endif %}" href="?{% if query %}q={{ query|urlencode }}&amp;{% endif %}category={{ category.slug }}">{{ category.name }}</a>
-    {% endfor %}
-  </div>
-</section>
+  <section class="glossary-main" aria-labelledby="glossary-results-heading">
+    <form class="search compact-search" method="get" role="search">
+      <label for="q">Search this glossary</label>
+      <div>
+        <input id="q" name="q" value="{{ query }}" placeholder="Search term, context, tag, or category">
+        {% if selected_category_slug %}
+          <input type="hidden" name="category" value="{{ selected_category_slug }}">
+        {% endif %}
+        {% if selected_letter %}
+          <input type="hidden" name="letter" value="{{ selected_letter }}">
+        {% endif %}
+        <button type="submit">Search</button>
+      </div>
+    </form>
 
-{% if query or selected_category %}
-<section>
-  <h2>
-    {% if query and selected_category %}
-      Search results for "{{ query }}" in {{ selected_category.name }}
-    {% elif query %}
-      Search results for "{{ query }}"
-    {% else %}
-      {{ selected_category.name }} signs
-    {% endif %}
-  </h2>
-  <div class="grid three-col">
-    {% for sign in signs %}
-      {% include "glossary/partials/sign_card.html" with sign=sign organisation=organisation favourite_ids=favourite_ids %}
-    {% empty %}
-      <p>No signs matched this search.</p>
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
+    <nav class="alphabet-strip" aria-label="Filter glossary by first letter">
+      <a class="letter-chip {% if not selected_letter %}active{% endif %}" href="{% if query or selected_category_slug %}?{% if query %}q={{ query|urlencode }}{% if selected_category_slug %}&amp;{% endif %}{% endif %}{% if selected_category_slug %}category={{ selected_category_slug }}{% endif %}{% else %}{{ organisation.get_absolute_url }}{% endif %}">All</a>
+      {% for letter in alphabet %}
+        <a class="letter-chip {% if selected_letter == letter %}active{% endif %}" href="?{% if query %}q={{ query|urlencode }}&amp;{% endif %}{% if selected_category_slug %}category={{ selected_category_slug }}&amp;{% endif %}letter={{ letter }}">{{ letter }}</a>
+      {% endfor %}
+    </nav>
 
-{% if quick_signs %}
-<section>
-  <h2>Quick reference signs</h2>
-  <div class="grid three-col">
-    {% for sign in quick_signs %}
-      {% include "glossary/partials/sign_card.html" with sign=sign organisation=organisation favourite_ids=favourite_ids %}
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
+    <div class="section-kicker glossary-results-heading">
+      <div>
+        <p class="eyebrow">Glossary terms</p>
+        <h2 id="glossary-results-heading">
+          {% if query and selected_category %}
+            "{{ query }}" in {{ selected_category.name }}
+          {% elif query %}
+            Search results for "{{ query }}"
+          {% elif selected_category and selected_letter %}
+            {{ selected_category.name }} signs beginning with {{ selected_letter }}
+          {% elif selected_category %}
+            {{ selected_category.name }} signs
+          {% elif selected_letter %}
+            Signs beginning with {{ selected_letter }}
+          {% else %}
+            All signs
+          {% endif %}
+        </h2>
+      </div>
+      <span class="status">{{ result_count }} results</span>
+    </div>
 
-<section>
-  <h2>Browse categories</h2>
-  <div class="grid three-col">
-    {% for category in categories %}
-      <article class="card">
-        <h3>{{ category.name }}</h3>
-        <p>{{ category.description }}</p>
-        <p class="muted">{{ category.signs.count }} signs</p>
-        <a href="{{ category.get_absolute_url }}">Browse category</a>
-      </article>
-    {% empty %}
-      <p>No categories have been added for this organisation yet.</p>
-    {% endfor %}
-  </div>
-</section>
+    <div class="glossary-grid">
+      {% for sign in signs %}
+        {% include "glossary/partials/sign_card.html" with sign=sign organisation=organisation favourite_ids=favourite_ids %}
+      {% empty %}
+        <div class="empty-state">
+          <h3>No signs found</h3>
+          <p>No signs matched this search. Try another search term, category, or letter.</p>
+          <a class="button secondary" href="{{ organisation.get_absolute_url }}">Reset glossary</a>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
 
 {% if faqs %}
 <section>

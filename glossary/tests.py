@@ -3,7 +3,7 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Category, FavouriteSign, Organisation, PortalItem, SignEntry, SignRequest, StaffProfile
+from .models import Category, FavouriteSign, Organisation, PortalItem, SignEntry, SignRequest, StaffProfile, Transcript
 
 
 class GlossaryWorkflowTests(TestCase):
@@ -170,6 +170,15 @@ class GlossaryWorkflowTests(TestCase):
         self.assertContains(response, "--accent: #123abc")
         response = self.client.get(reverse("request_sign", args=[self.org.slug]))
         self.assertContains(response, "--accent: #123abc")
+
+    def test_sign_detail_renders_optional_transcript_and_thumbnail(self):
+        self.sign.thumbnail_url = "https://example.com/login-thumb.jpg"
+        self.sign.save()
+        Transcript.objects.create(sign=self.sign, text="Transcript text for the login sign.")
+        response = self.client.get(reverse("sign_detail", args=[self.org.slug, self.sign.slug]))
+        self.assertContains(response, "Transcript text for the login sign.")
+        self.assertContains(response, 'src="https://example.com/login-thumb.jpg"')
+        self.assertContains(response, 'alt="Thumbnail for Login ISL video"')
 
     def test_retail_dashboard_shows_retail_placeholder_widgets(self):
         retail_user = User.objects.create_user(username="retail", password="pass12345")

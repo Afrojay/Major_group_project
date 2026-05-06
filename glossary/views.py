@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count
 from django.db.models import Q
 from django.http import Http404
@@ -11,6 +12,8 @@ from django.views.decorators.http import require_POST
 
 from .forms import AssignedTaskForm, PortalItemForm, SignRequestForm, SignRequestReviewForm
 from .models import Category, FavouriteSign, Organisation, PortalItem, SignEntry, SignRequest
+
+ALPHABET = tuple("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 
 class StaffLoginView(LoginView):
@@ -52,10 +55,12 @@ def _require_request_reviewer_profile(user, organisation):
     return profile
 
 
-def _search_signs(organisation, query, category_slug=""):
+def _search_signs(organisation, query, category_slug="", letter=""):
     signs = organisation.signs.select_related("category")
     if category_slug:
         signs = signs.filter(category__slug=category_slug)
+    if letter:
+        signs = signs.filter(term__istartswith=letter)
     if not query:
         return signs
     return signs.filter(
@@ -257,6 +262,9 @@ def organisation_home(request, organisation_slug):
     organisation = get_object_or_404(Organisation, slug=organisation_slug)
     query = request.GET.get("q", "").strip()
     selected_category_slug = request.GET.get("category", "").strip()
+    selected_letter = request.GET.get("letter", "").strip().upper()[:1]
+    if selected_letter not in ALPHABET:
+        selected_letter = ""
     selected_category = None
     if selected_category_slug:
         selected_category = get_object_or_404(
@@ -264,9 +272,12 @@ def organisation_home(request, organisation_slug):
             organisation=organisation,
             slug=selected_category_slug,
         )
-    signs = _search_signs(organisation, query, selected_category_slug)
-    categories = organisation.categories.prefetch_related("signs")
-    quick_signs = organisation.signs.filter(is_quick_reference=True).select_related("category")[:8]
+    signs = _search_signs(organisation, query, selected_category_slug, selected_letter)
+    categories = organisation.categories.annotate(sign_count=Count("signs")).prefetch_related("signs")
+    quick_signs = organisation.signs.filter(is_quick_reference=True).select_related("category")
+    if selected_category:
+        quick_signs = quick_signs.filter(category=selected_category)
+    quick_signs = quick_signs[:8]
     faqs = organisation.faqs.select_related("related_category", "related_sign")[:6]
     favourite_ids = set()
     profile = _staff_profile_for(request.user, organisation)
@@ -279,9 +290,13 @@ def organisation_home(request, organisation_slug):
             "organisation": organisation,
             "categories": categories,
             "query": query,
+            "alphabet": ALPHABET,
             "selected_category": selected_category,
             "selected_category_slug": selected_category_slug,
+            "selected_letter": selected_letter,
             "signs": signs,
+            "result_count": signs.count(),
+            "total_sign_count": organisation.signs.count(),
             "quick_signs": quick_signs,
             "faqs": faqs,
             "staff_profile": profile,
@@ -312,10 +327,14 @@ def category_detail(request, organisation_slug, category_slug):
 def sign_detail(request, organisation_slug, sign_slug):
     organisation = get_object_or_404(Organisation, slug=organisation_slug)
     sign = get_object_or_404(
-        SignEntry.objects.select_related("category", "organisation"),
+        SignEntry.objects.select_related("category", "organisation", "transcript"),
         organisation=organisation,
         slug=sign_slug,
     )
+    try:
+        transcript = sign.transcript
+    except ObjectDoesNotExist:
+        transcript = None
     profile = _staff_profile_for(request.user, organisation)
     is_favourite = False
     if profile:
@@ -326,6 +345,7 @@ def sign_detail(request, organisation_slug, sign_slug):
         {
             "organisation": organisation,
             "sign": sign,
+            "transcript": transcript,
             "staff_profile": profile,
             "is_favourite": is_favourite,
         },
@@ -385,6 +405,7 @@ def create_portal_item(request, organisation_slug):
         item.organisation = organisation
         item.created_by = profile
         item.item_type = default_item_type
+        item.full_clean()
         item.save()
         messages.success(request, f"{item.title} was added to the dashboard.")
     else:

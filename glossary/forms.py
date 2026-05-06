@@ -21,6 +21,11 @@ class SignRequestForm(forms.ModelForm):
 
     def __init__(self, *args, organisation, staff_profile=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.instance.organisation = organisation
+        if staff_profile:
+            self.instance.requested_by = staff_profile
+            self.instance.requester_name = staff_profile.user.get_full_name() or staff_profile.user.get_username()
+            self.instance.requester_email = staff_profile.user.email
         self.fields["suggested_category"].queryset = organisation.categories.all()
         self.fields["suggested_category"].required = False
         if staff_profile:

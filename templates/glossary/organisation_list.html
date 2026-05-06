@@ -3,17 +3,32 @@
 {% block title %}Organisations | ISL Glossary Platform{% endblock %}
 
 {% block content %}
-<section class="hero compact">
+<section class="hero compact landing-hero">
   <p class="eyebrow">Prototype</p>
   <h1>Accessible ISL glossary collections for specific service contexts</h1>
   <p>This prototype supports organisation-specific browse, search, staff favourites, sign requests, manager review, and back-office content management.</p>
 </section>
 
-<section class="grid two-col" aria-label="Available organisations">
+<section class="organisation-grid" aria-label="Available organisations">
   {% for organisation in organisations %}
-    <article class="card">
-      <h2>{{ organisation.name }}</h2>
-      <p>{{ organisation.description }}</p>
+    <article class="card organisation-card" style="--accent: {{ organisation.safe_theme_colour }}">
+      <div class="org-card-head">
+        {% if organisation.logo_url %}
+          <img class="org-logo small" src="{{ organisation.logo_url }}" alt="{{ organisation.name }} logo">
+        {% else %}
+          <span class="org-mark" aria-hidden="true">{{ organisation.name|first }}</span>
+        {% endif %}
+        <div>
+          <p class="eyebrow">Organisation glossary</p>
+          <h2>{{ organisation.name }}</h2>
+        </div>
+      </div>
+      {% if organisation.description %}
+        <p>{{ organisation.description }}</p>
+      {% endif %}
+      {% if organisation.contact_email %}
+        <p class="muted">Contact: {{ organisation.contact_email }}</p>
+      {% endif %}
       <a class="button" href="{{ organisation.get_absolute_url }}">Open glossary</a>
     </article>
   {% empty %}

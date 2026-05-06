@@ -17,9 +17,22 @@
     <p class="eyebrow">{{ sign.category.name }}</p>
     <h1>{{ sign.term }}</h1>
     <p class="lead">{{ sign.description }}</p>
+    <p>
+      <span class="status">
+        {% if sign.is_official_published %}Official published sign{% else %}Prototype draft sign{% endif %}
+      </span>
+    </p>
 
     <h2>Usage context</h2>
     <p>{{ sign.usage_context }}</p>
+
+    {% if transcript %}
+      <section class="transcript-panel" aria-labelledby="transcript-heading">
+        <h2 id="transcript-heading">Transcript</h2>
+        <p>{{ transcript.text }}</p>
+        <p class="muted">Language: {{ transcript.language }}</p>
+      </section>
+    {% endif %}
 
     {% if sign.tags %}
       <p class="tags">{{ sign.tags }}</p>
@@ -37,6 +50,9 @@
   </div>
 
   <aside class="video-panel" aria-label="ISL video">
+    {% if sign.thumbnail_url %}
+      <img class="video-thumbnail" src="{{ sign.thumbnail_url }}" alt="Thumbnail for {{ sign.term }} ISL video">
+    {% endif %}
     <div class="video-placeholder">
       <p>ISL video reference</p>
       <a href="{{ sign.video_url }}" target="_blank" rel="noopener">{{ sign.video_url }}</a>

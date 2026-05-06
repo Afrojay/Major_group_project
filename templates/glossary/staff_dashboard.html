@@ -3,10 +3,24 @@
 {% block title %}Staff dashboard | {{ organisation.name }}{% endblock %}
 
 {% block content %}
+<div class="dashboard-page org-themed-page" style="--accent: {{ organisation.safe_theme_colour }}">
 {% include "glossary/partials/portal_hero.html" %}
 
-<section>
-  <h2>Staff portal snapshot</h2>
+<nav class="dashboard-quicknav" aria-label="Dashboard sections">
+  <a href="#portal-items">Today's work</a>
+  <a href="#favourite-signs">Saved signs</a>
+  <a href="#recent-signs">Recent signs</a>
+  <a href="#sign-requests">Requests</a>
+</nav>
+
+<section class="dashboard-section">
+  <div class="section-kicker">
+    <div>
+      <p class="eyebrow">Overview</p>
+      <h2>Staff portal snapshot</h2>
+    </div>
+    <a href="{{ organisation.get_absolute_url }}">Open glossary</a>
+  </div>
   <div class="metric-grid">
     <a class="metric metric-link" href="#favourite-signs">
       <span>{{ favourites.count }}</span>
@@ -33,8 +47,13 @@
   </div>
 </section>
 
-<section>
-  <h2>Today's portal</h2>
+<section class="dashboard-section">
+  <div class="section-kicker">
+    <div>
+      <p class="eyebrow">Role and domain</p>
+      <h2>Today's portal</h2>
+    </div>
+  </div>
   <div class="grid three-col">
     {% for card in portal_cards %}
       <article class="card portal-card">
@@ -52,8 +71,13 @@
   </div>
 </section>
 
-<section id="portal-items">
-  <h2>{{ portal_item_heading }}</h2>
+<section id="portal-items" class="dashboard-section">
+  <div class="section-kicker">
+    <div>
+      <p class="eyebrow">Work queue</p>
+      <h2>{{ portal_item_heading }}</h2>
+    </div>
+  </div>
   <div class="dashboard-workspace">
     <form class="form-card compact-form" method="post" action="{% url 'create_portal_item' organisation.slug %}">
       {% csrf_token %}
@@ -90,8 +114,13 @@
   </div>
 </section>
 
-<section id="favourite-signs">
-  <h2>Favourite signs</h2>
+<section id="favourite-signs" class="dashboard-section">
+  <div class="section-kicker">
+    <div>
+      <p class="eyebrow">Saved for later</p>
+      <h2>Favourite signs</h2>
+    </div>
+  </div>
   <div class="grid three-col">
     {% for favourite in favourites %}
       {% include "glossary/partials/sign_card.html" with sign=favourite.sign organisation=organisation %}
@@ -101,8 +130,13 @@
   </div>
 </section>
 
-<section id="recent-signs">
-  <h2>Recently updated signs</h2>
+<section id="recent-signs" class="dashboard-section">
+  <div class="section-kicker">
+    <div>
+      <p class="eyebrow">Glossary changes</p>
+      <h2>Recently updated signs</h2>
+    </div>
+  </div>
   <div class="grid three-col">
     {% for sign in recent_signs %}
       {% include "glossary/partials/sign_card.html" with sign=sign organisation=organisation %}
@@ -112,8 +146,14 @@
   </div>
 </section>
 
-<section id="sign-requests">
-  <h2>My sign requests</h2>
+<section id="sign-requests" class="dashboard-section">
+  <div class="section-kicker">
+    <div>
+      <p class="eyebrow">Follow-up</p>
+      <h2>My sign requests</h2>
+    </div>
+    <a href="{% url 'request_sign' organisation.slug %}">New request</a>
+  </div>
   <div class="table-wrap">
     <table>
       <thead>
@@ -139,4 +179,5 @@
     </table>
   </div>
 </section>
+</div>
 {% endblock %}

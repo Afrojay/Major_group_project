@@ -15,11 +15,10 @@ This report documents accessibility findings during the initial audit of the mod
 - **Body text**: `--ink: #17201c` on `--bg: #f6f8fb` = ~15:1 ✓ PASS  
 - **Link color**: `#075985` on `--bg: #f6f8fb` = ~7:1 ✓ PASS
 - **Muted link text**: May fail at smaller sizes. Needs remediation.
-- **Dark mode support needed**: Currently light-only, no dark mode CSS variables applied
+- **Dark mode**: Out of scope for the thesis prototype.
 
 ### Recommended Fixes:
 ✓ Current palette meets AA standards for normal text
-- Add dark mode support with proper contrast in dark theme
 - Ensure all text meets 4.5:1 at 14px minimum
 
 ---
@@ -94,14 +93,13 @@ button:focus-visible {
 ## 6. Video Accessibility
 
 ### Current Issues Found:
-- ❌ ISL videos (core content) have no captions or transcripts
+- ⚠ ISL videos (core content) do not yet have hosted captions.
 - ⚠ Video placeholder just shows URL: `<a href="{{ sign.video_url }}">{{ sign.video_url }}</a>`
-- ❌ No transcript field in SignEntry model yet
+- ✓ Transcript model exists for optional text transcripts linked to signs.
 
 ### Required Fixes:
-- Add transcript field to SignEntry (Phase 6 data model enhancement)
 - Embed video player that supports captions
-- Provide transcript link below video
+- Render available transcripts on sign detail pages
 - Add alt text description for sign video context
 
 ---
@@ -163,12 +161,12 @@ button:focus-visible {
 1. Add aria-label to icon-only buttons (♡/♥)
 2. Add aria-required and aria-describedby to forms
 3. Verify focus outline contrast (especially on blue buttons)
-4. Add transcript field to SignEntry model
+4. Render available transcripts on sign detail pages
 5. Test keyboard navigation on all pages
 
 ### P1 (High - Should Fix):
 1. Add aria-label to grid regions without headings
-2. Implement dark mode with accessible contrast
+2. Keep colour contrast documented for each organisation theme
 3. Test with screen reader (NVDA or VoiceOver)
 4. Document focus order in README
 

@@ -33,15 +33,17 @@ Organisation -> Categories -> Sign entries -> Video URLs / embeds -> Search and 
 - `Organisation`
 - `Category`
 - `SignEntry`
+- `Transcript`
 - `FAQEntry`
 - `StaffProfile`
 - `FavouriteSign`
 - `SignRequest`
+- `PortalItem`
 
 ## Key Workflows
 
 1. A user opens an organisation-specific glossary.
-2. They browse categories or search for a sign.
+2. They browse categories, use A-Z filtering, or search for a sign.
 3. They view a sign entry with an English term, ISL video URL, description, usage context and category.
 4. Staff can log in.
 5. Staff can favourite useful signs from their own organisation.
@@ -51,6 +53,8 @@ Organisation -> Categories -> Sign entries -> Video URLs / embeds -> Search and 
 9. Managers and glossary managers can review requests in an organisation-specific dashboard.
 10. Manager-approved requests can be passed to interpreter/content review.
 11. Django admin is used for official content management and publication.
+12. Sign entries can include optional transcript and thumbnail metadata to support accessibility and browsing.
+13. Staff and managers can use simple dashboard items for prototype tasks, appointments, calendar events and access notes.
 
 ## Security and Design Principles
 
@@ -62,6 +66,7 @@ Organisation -> Categories -> Sign entries -> Video URLs / embeds -> Search and 
 - Staff profiles use simple role types: Staff, Manager, and Glossary manager.
 - Managers can approve requests for interpreter/content review, but they do not publish official signs through the portal.
 - Sign requests use statuses: Pending manager review, Needs clarification, Manager approved, Sent to interpreter, Completed, Rejected.
+- Sign entries include an official publication flag so unreviewed prototype content can be identified.
 - Django authentication and CSRF protection are used.
 
 ## Security-Related Workflow Refinement
@@ -86,6 +91,7 @@ Keep the following out of the core prototype unless explicitly implemented later
 - billing
 - full multi-tenant SaaS administration
 - production deployment automation
+- full video hosting, captions, and automated email notifications
 
 ## Thesis Consistency Rule
 

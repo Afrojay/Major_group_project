@@ -9,6 +9,7 @@ from .models import (
     SignEntry,
     SignRequest,
     StaffProfile,
+    Transcript,
 )
 
 
@@ -40,8 +41,15 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(SignEntry)
 class SignEntryAdmin(admin.ModelAdmin):
-    list_display = ("term", "organisation", "category", "is_quick_reference", "updated_at")
-    list_filter = ("organisation", "category", "is_quick_reference")
+    list_display = (
+        "term",
+        "organisation",
+        "category",
+        "is_quick_reference",
+        "is_official_published",
+        "updated_at",
+    )
+    list_filter = ("organisation", "category", "is_quick_reference", "is_official_published")
     prepopulated_fields = {"slug": ("term",)}
     search_fields = ("term", "description", "usage_context", "tags")
 
@@ -88,6 +96,13 @@ class SignRequestAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         obj.full_clean()
         super().save_model(request, obj, form, change)
+
+
+@admin.register(Transcript)
+class TranscriptAdmin(admin.ModelAdmin):
+    list_display = ("sign", "language", "updated_at")
+    list_filter = ("language", "sign__organisation")
+    search_fields = ("sign__term", "text")
 
 
 @admin.register(PortalItem)

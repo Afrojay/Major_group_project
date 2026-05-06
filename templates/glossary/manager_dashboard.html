@@ -3,11 +3,24 @@
 {% block title %}Manager dashboard | {{ organisation.name }}{% endblock %}
 
 {% block content %}
-<div class="org-themed-page" style="--accent: {{ organisation.safe_theme_colour }}">
+<div class="dashboard-page org-themed-page" style="--accent: {{ organisation.safe_theme_colour }}">
 {% include "glossary/partials/portal_hero.html" %}
 
-<section id="assign-tasks">
-  <h2>Glossary overview</h2>
+<nav class="dashboard-quicknav" aria-label="Manager dashboard sections">
+  <a href="#manager-overview">Overview</a>
+  <a href="#review-requests">Request pipeline</a>
+  <a href="#assign-tasks">Assign tasks</a>
+  <a href="#back-office-handoff">Back-office handoff</a>
+</nav>
+
+<section id="manager-overview" class="dashboard-section">
+  <div class="section-kicker">
+    <div>
+      <p class="eyebrow">Manager overview</p>
+      <h2>Glossary overview</h2>
+    </div>
+    <a href="{{ organisation.get_absolute_url }}">View public glossary</a>
+  </div>
   <div class="metric-grid">
     <article class="metric">
       <span>{{ sign_count }}</span>
@@ -28,8 +41,13 @@
   </div>
 </section>
 
-<section id="review-requests">
-  <h2>Request pipeline</h2>
+<section id="review-requests" class="dashboard-section">
+  <div class="section-kicker">
+    <div>
+      <p class="eyebrow">Governance</p>
+      <h2>Request pipeline</h2>
+    </div>
+  </div>
   <div class="grid four-col">
     <article class="card">
       <h3>Pending manager review</h3>
@@ -50,8 +68,13 @@
   </div>
 </section>
 
-<section>
-  <h2>Assign staff tasks</h2>
+<section id="assign-tasks" class="dashboard-section">
+  <div class="section-kicker">
+    <div>
+      <p class="eyebrow">Team coordination</p>
+      <h2>Assign staff tasks</h2>
+    </div>
+  </div>
   <div class="dashboard-workspace">
     <form class="form-card compact-form" method="post" action="{% url 'create_assigned_task' organisation.slug %}">
       {% csrf_token %}
@@ -90,8 +113,13 @@
   </div>
 </section>
 
-<section>
-  <h2>Review sign requests</h2>
+<section class="dashboard-section">
+  <div class="section-kicker">
+    <div>
+      <p class="eyebrow">Manager decisions</p>
+      <h2>Review sign requests</h2>
+    </div>
+  </div>
   <div class="request-list">
     {% for sign_request in requests %}
       <article class="card request-card">
@@ -128,8 +156,13 @@
   </div>
 </section>
 
-<section>
-  <h2>Back-office handoff</h2>
+<section id="back-office-handoff" class="dashboard-section">
+  <div class="section-kicker">
+    <div>
+      <p class="eyebrow">Publication boundary</p>
+      <h2>Back-office handoff</h2>
+    </div>
+  </div>
   <div class="grid three-col">
     <article class="card">
       <h3>Interpreter/content review</h3>

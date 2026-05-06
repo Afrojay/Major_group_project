@@ -3,7 +3,6 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 from django.urls import reverse
-from simple_history.models import HistoricalRecords
 
 
 hex_colour_validator = RegexValidator(
@@ -107,9 +106,6 @@ class SignEntry(TimeStampedModel):
         help_text="Whether this sign has been reviewed and approved by interpreters."
     )
     
-    # Audit tracking
-    history = HistoricalRecords()
-
     class Meta:
         ordering = ["term"]
         constraints = [
@@ -325,9 +321,6 @@ class SignRequest(TimeStampedModel):
         help_text="Notes from interpreter/content review team."
     )
     
-    # Audit tracking
-    history = HistoricalRecords()
-
     class Meta:
         ordering = ["-created_at"]
 

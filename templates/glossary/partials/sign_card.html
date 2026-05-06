@@ -1,6 +1,15 @@
 <article class="card sign-card">
-  <p class="eyebrow">{{ sign.category.name }}</p>
-  <h3>{{ sign.term }}</h3>
-  <p>{{ sign.description|truncatewords:24 }}</p>
-  <a href="{{ sign.get_absolute_url }}">View sign</a>
+  <div class="sign-card-head">
+    <p class="eyebrow">{{ sign.category.name }}</p>
+    {% if favourite_ids and sign.id in favourite_ids %}
+      <span class="status">Saved</span>
+    {% endif %}
+  </div>
+  <h3><a href="{{ sign.get_absolute_url }}">{{ sign.term }}</a></h3>
+  {% if sign.description %}
+    <p>{{ sign.description|truncatewords:24 }}</p>
+  {% else %}
+    <p class="muted">No description has been added yet.</p>
+  {% endif %}
+  <a class="button secondary" href="{{ sign.get_absolute_url }}">View sign</a>
 </article>

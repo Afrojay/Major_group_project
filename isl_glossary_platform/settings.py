@@ -13,7 +13,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "simple_history",
     "glossary",
 ]
 
@@ -25,7 +24,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "simple_history.middleware.HistoryRequestMiddleware",
 ]
 
 ROOT_URLCONF = "isl_glossary_platform.urls"
@@ -71,7 +69,6 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = [
     BASE_DIR / "static",
-    BASE_DIR / "static" / "dist",  # Vite build output
 ]
 
 # Media files (uploads)
