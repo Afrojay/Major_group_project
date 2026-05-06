@@ -1,0 +1,41 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}ISL Glossary Platform{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'glossary/styles.css' %}">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+  <header class="site-header">
+    <nav class="nav" aria-label="Primary">
+      <a class="brand" href="{% url 'organisation_list' %}">ISL Glossary</a>
+      <div class="nav-actions">
+        {% if user.is_authenticated %}
+          <span class="muted">Signed in as {{ user.username }}</span>
+          <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button class="link-button" type="submit">Log out</button>
+          </form>
+        {% else %}
+          <a href="{% url 'login' %}">Staff login</a>
+        {% endif %}
+        <a href="/admin/">Admin</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main" class="page">
+    {% if messages %}
+      <div class="messages" aria-live="polite">
+        {% for message in messages %}
+          <p class="message {{ message.tags }}">{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

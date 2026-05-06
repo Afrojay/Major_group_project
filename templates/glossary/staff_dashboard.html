@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Staff dashboard | {{ organisation.name }}{% endblock %}
+
+{% block content %}
+<section class="section-heading">
+  <p class="eyebrow">Staff area</p>
+  <h1>My {{ organisation.name }} glossary dashboard</h1>
+  <p>Favourites and sign requests are scoped to your staff profile for this organisation.</p>
+  <div class="actions">
+    <a class="button" href="{% url 'request_sign' organisation.slug %}">Request a missing sign</a>
+    <a class="button secondary" href="{{ organisation.get_absolute_url }}">Browse glossary</a>
+    {% if staff_profile.is_organisation_admin %}
+      <a class="button secondary" href="{% url 'organisation_admin_dashboard' organisation.slug %}">Admin dashboard</a>
+    {% endif %}
+  </div>
+</section>
+
+<section>
+  <h2>Staff portal snapshot</h2>
+  <div class="metric-grid">
+    <article class="metric">
+      <span>{{ favourites.count }}</span>
+      <p>Saved signs</p>
+    </article>
+    <article class="metric">
+      <span>{{ requests.count }}</span>
+      <p>My requests</p>
+    </article>
+    <article class="metric">
+      <span>{{ quick_reference_count }}</span>
+      <p>Quick references</p>
+    </article>
+  </div>
+</section>
+
+<section>
+  <h2>Common staff actions</h2>
+  <div class="grid three-col">
+    <article class="card">
+      <h3>Front desk support</h3>
+      <p>Open frequently used signs for everyday service conversations.</p>
+      <a href="{{ organisation.get_absolute_url }}">Open glossary</a>
+    </article>
+    <article class="card">
+      <h3>Missing vocabulary</h3>
+      <p>Suggest terms that would help staff support visitors or service users.</p>
+      <a href="{% url 'request_sign' organisation.slug %}">Submit request</a>
+    </article>
+    <article class="card muted-card">
+      <h3>Training notes</h3>
+      <p>Placeholder for organisation guidance, interpreter policy, and staff onboarding links.</p>
+      <span class="status">Future work</span>
+    </article>
+  </div>
+</section>
+
+<section>
+  <h2>Favourite signs</h2>
+  <div class="grid three-col">
+    {% for favourite in favourites %}
+      {% include "glossary/partials/sign_card.html" with sign=favourite.sign organisation=organisation %}
+    {% empty %}
+      <p>You have not favourited any signs yet.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section>
+  <h2>Recently updated signs</h2>
+  <div class="grid three-col">
+    {% for sign in recent_signs %}
+      {% include "glossary/partials/sign_card.html" with sign=sign organisation=organisation %}
+    {% empty %}
+      <p>No signs have been added yet.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section>
+  <h2>My sign requests</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Term</th>
+          <th>Category</th>
+          <th>Status</th>
+          <th>Submitted</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sign_request in requests %}
+          <tr>
+            <td>{{ sign_request.term }}</td>
+            <td>{{ sign_request.suggested_category|default:"Not specified" }}</td>
+            <td><span class="status">{{ sign_request.get_status_display }}</span></td>
+            <td>{{ sign_request.created_at|date:"j M Y" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4">No sign requests submitted yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

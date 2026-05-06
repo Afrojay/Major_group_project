@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}{{ organisation.name }} | ISL Glossary{% endblock %}
+
+{% block content %}
+<section class="hero" style="--accent: {{ organisation.theme_colour }}">
+  <p class="eyebrow">Organisation glossary</p>
+  <h1>{{ organisation.name }}</h1>
+  <p>{{ organisation.description }}</p>
+  <div class="actions">
+    {% if staff_profile %}
+      <a class="button" href="{% url 'staff_dashboard' organisation.slug %}">My dashboard</a>
+      {% if staff_profile.is_organisation_admin %}
+        <a class="button secondary" href="{% url 'organisation_admin_dashboard' organisation.slug %}">Admin dashboard</a>
+      {% endif %}
+      <a class="button secondary" href="{% url 'request_sign' organisation.slug %}">Request a sign</a>
+    {% else %}
+      <a class="button" href="{% url 'login' %}">Staff login</a>
+      <a class="button secondary" href="{% url 'request_sign' organisation.slug %}">Request a sign</a>
+    {% endif %}
+  </div>
+</section>
+
+<form class="search" method="get" role="search">
+  <label for="q">Search this glossary</label>
+  <div>
+    <input id="q" name="q" value="{{ query }}" placeholder="Search term, context, tag, or category">
+    <button type="submit">Search</button>
+  </div>
+</form>
+
+{% if query %}
+<section>
+  <h2>Search results for "{{ query }}"</h2>
+  <div class="grid three-col">
+    {% for sign in signs %}
+      {% include "glossary/partials/sign_card.html" with sign=sign organisation=organisation favourite_ids=favourite_ids %}
+    {% empty %}
+      <p>No signs matched this search.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if quick_signs %}
+<section>
+  <h2>Quick reference signs</h2>
+  <div class="grid three-col">
+    {% for sign in quick_signs %}
+      {% include "glossary/partials/sign_card.html" with sign=sign organisation=organisation favourite_ids=favourite_ids %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section>
+  <h2>Browse categories</h2>
+  <div class="grid three-col">
+    {% for category in categories %}
+      <article class="card">
+        <h3>{{ category.name }}</h3>
+        <p>{{ category.description }}</p>
+        <p class="muted">{{ category.signs.count }} signs</p>
+        <a href="{{ category.get_absolute_url }}">Browse category</a>
+      </article>
+    {% empty %}
+      <p>No categories have been added for this organisation yet.</p>
+    {% endfor %}
+  </div>
+</section>
+
+{% if faqs %}
+<section>
+  <h2>Common questions</h2>
+  <div class="grid two-col">
+    {% for faq in faqs %}
+      <article class="card">
+        <h3>{{ faq.question }}</h3>
+        <p>{{ faq.answer }}</p>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

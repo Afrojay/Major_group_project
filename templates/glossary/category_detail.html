@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}{{ category.name }} | {{ organisation.name }}{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ organisation.get_absolute_url }}">{{ organisation.name }}</a>
+  <span aria-hidden="true">/</span>
+  <span>{{ category.name }}</span>
+</nav>
+
+<section class="section-heading">
+  <h1>{{ category.name }}</h1>
+  <p>{{ category.description }}</p>
+</section>
+
+<div class="grid three-col">
+  {% for sign in signs %}
+    {% include "glossary/partials/sign_card.html" with sign=sign organisation=organisation %}
+  {% empty %}
+    <p>No signs are currently listed in this category.</p>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,6 @@
+<article class="card sign-card">
+  <p class="eyebrow">{{ sign.category.name }}</p>
+  <h3>{{ sign.term }}</h3>
+  <p>{{ sign.description|truncatewords:24 }}</p>
+  <a href="{{ sign.get_absolute_url }}">View sign</a>
+</article>

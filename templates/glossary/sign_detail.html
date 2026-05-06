@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}{{ sign.term }} | {{ organisation.name }}{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ organisation.get_absolute_url }}">{{ organisation.name }}</a>
+  <span aria-hidden="true">/</span>
+  <a href="{{ sign.category.get_absolute_url }}">{{ sign.category.name }}</a>
+  <span aria-hidden="true">/</span>
+  <span>{{ sign.term }}</span>
+</nav>
+
+<article class="sign-layout">
+  <div>
+    <p class="eyebrow">{{ sign.category.name }}</p>
+    <h1>{{ sign.term }}</h1>
+    <p class="lead">{{ sign.description }}</p>
+
+    <h2>Usage context</h2>
+    <p>{{ sign.usage_context }}</p>
+
+    {% if sign.tags %}
+      <p class="tags">{{ sign.tags }}</p>
+    {% endif %}
+
+    {% if staff_profile %}
+      <form method="post" action="{% url 'toggle_favourite' organisation.slug sign.id %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <button class="button" type="submit">
+          {% if is_favourite %}Remove favourite{% else %}Add favourite{% endif %}
+        </button>
+      </form>
+    {% endif %}
+  </div>
+
+  <aside class="video-panel" aria-label="ISL video">
+    <div class="video-placeholder">
+      <p>ISL video reference</p>
+      <a href="{{ sign.video_url }}" target="_blank" rel="noopener">{{ sign.video_url }}</a>
+    </div>
+  </aside>
+</article>
+{% endblock %}

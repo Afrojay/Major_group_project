@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Admin dashboard | {{ organisation.name }}{% endblock %}
+
+{% block content %}
+<section class="section-heading">
+  <p class="eyebrow">Organisation admin</p>
+  <h1>{{ organisation.name }} admin dashboard</h1>
+  <p>This dashboard gives organisation admins a focused review area for glossary requests. Official sign creation still happens in Django admin for this prototype.</p>
+  <div class="actions">
+    <a class="button" href="/admin/glossary/signentry/add/">Add official sign</a>
+    <a class="button secondary" href="{{ organisation.get_absolute_url }}">View public glossary</a>
+    <a class="button secondary" href="{% url 'staff_dashboard' organisation.slug %}">Staff dashboard</a>
+  </div>
+</section>
+
+<section>
+  <h2>Glossary overview</h2>
+  <div class="metric-grid">
+    <article class="metric">
+      <span>{{ sign_count }}</span>
+      <p>Official signs</p>
+    </article>
+    <article class="metric">
+      <span>{{ category_count }}</span>
+      <p>Categories</p>
+    </article>
+    <article class="metric">
+      <span>{{ staff_count }}</span>
+      <p>Staff profiles</p>
+    </article>
+    <article class="metric">
+      <span>{{ pending_count }}</span>
+      <p>Pending requests</p>
+    </article>
+  </div>
+</section>
+
+<section>
+  <h2>Request status</h2>
+  <div class="grid four-col">
+    <article class="card">
+      <h3>Pending</h3>
+      <p class="large-number">{{ pending_count }}</p>
+    </article>
+    <article class="card">
+      <h3>Needs clarification</h3>
+      <p class="large-number">{{ needs_clarification_count }}</p>
+    </article>
+    <article class="card">
+      <h3>Approved</h3>
+      <p class="large-number">{{ approved_count }}</p>
+    </article>
+    <article class="card">
+      <h3>Rejected</h3>
+      <p class="large-number">{{ rejected_count }}</p>
+    </article>
+  </div>
+</section>
+
+<section>
+  <h2>Review sign requests</h2>
+  <div class="request-list">
+    {% for sign_request in requests %}
+      <article class="card request-card">
+        <div>
+          <p class="eyebrow">{{ sign_request.suggested_category|default:"No category suggested" }}</p>
+          <h3>{{ sign_request.term }}</h3>
+          <p>{{ sign_request.context }}</p>
+          <p class="muted">
+            Requested by
+            {% if sign_request.requested_by %}
+              {{ sign_request.requested_by.user.get_username }}
+            {% else %}
+              {{ sign_request.requester_name }}{% if sign_request.requester_email %} · {{ sign_request.requester_email }}{% endif %}
+            {% endif %}
+          </p>
+        </div>
+        <form method="post" action="{% url 'review_sign_request' organisation.slug sign_request.id %}">
+          {% csrf_token %}
+          <label for="status-{{ sign_request.id }}">Status</label>
+          <select id="status-{{ sign_request.id }}" name="status">
+            {% for value, label in sign_request.Status.choices %}
+              <option value="{{ value }}" {% if sign_request.status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <label for="notes-{{ sign_request.id }}">Admin notes</label>
+          <textarea id="notes-{{ sign_request.id }}" name="admin_notes" rows="3">{{ sign_request.admin_notes }}</textarea>
+          <button class="button" type="submit">Update request</button>
+        </form>
+      </article>
+    {% empty %}
+      <p>No sign requests have been submitted yet.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section>
+  <h2>Admin tools</h2>
+  <div class="grid three-col">
+    <article class="card">
+      <h3>Content management</h3>
+      <p>Add official signs, categories, FAQs, and staff profiles through Django admin.</p>
+      <a href="/admin/glossary/">Open Django admin</a>
+    </article>
+    <article class="card muted-card">
+      <h3>Review history</h3>
+      <p>Placeholder for audit trail and decision history.</p>
+      <span class="status">Future work</span>
+    </article>
+    <article class="card muted-card">
+      <h3>Export requests</h3>
+      <p>Placeholder for exporting requests for reporting or content planning.</p>
+      <span class="status">Future work</span>
+    </article>
+  </div>
+</section>
+{% endblock %}
