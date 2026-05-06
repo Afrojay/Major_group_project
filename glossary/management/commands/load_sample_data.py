@@ -112,14 +112,21 @@ def video_details_for(term):
         details = CANDIDATE_VIDEO_SOURCES[term]
         return {
             "video_url": details["video_url"],
-            "usage_context_extra": f"\n\nVideo source: {details['source_label']} ({details['source_url']}). {details['source_note']}",
+            "usage_context_extra": f"Video source: {details['source_label']} ({details['source_url']}). {details['source_note']}",
             "is_official_published": False,
         }
     return {
         "video_url": PLACEHOLDER_VIDEO_URL,
-        "usage_context_extra": "\n\nVideo status: Placeholder. A suitable verified ISL video was not found during initial searching. Many available results were ASL or BSL rather than ISL, so this sign needs later review or custom content.",
+        "usage_context_extra": "Video status: Placeholder. A suitable verified ISL video was not found during initial searching. Many available results were ASL or BSL rather than ISL, so this sign needs later review or custom content.",
         "is_official_published": False,
     }
+
+
+def usage_context_for(organisation, category_name, term, video_note):
+    return (
+        f"Used in the {organisation.name} context for {category_name.lower()} situations. "
+        f"{video_note}"
+    )
 
 
 class Command(BaseCommand):
@@ -156,7 +163,12 @@ class Command(BaseCommand):
                             "term": term,
                             "video_url": video_details["video_url"],
                             "description": f"A common service term for {organisation.name}.",
-                            "usage_context": "This is sample prototype content and should be reviewed before final submission." + video_details["usage_context_extra"],
+                            "usage_context": usage_context_for(
+                                organisation,
+                                category_name,
+                                term,
+                                video_details["usage_context_extra"],
+                            ),
                             "tags": f"{term.lower()}, {category_name.lower()}, {organisation.name.lower()}",
                             "is_quick_reference": term
                             in {
