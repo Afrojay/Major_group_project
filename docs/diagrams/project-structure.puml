@@ -1,0 +1,49 @@
+@startuml
+title ISL Glossary Platform - Django Prototype Structure
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+actor "Browser user" as User
+
+node "Django project" {
+  component "isl_glossary_platform" as Project {
+    [settings.py]
+    [urls.py]
+  }
+
+  component "glossary app" as App {
+    [models.py]
+    [views.py]
+    [forms.py]
+    [admin.py]
+    [urls.py] as AppUrls
+    [tests.py]
+    [load_sample_data.py]
+  }
+
+  database "SQLite database\n(db.sqlite3)" as DB
+  folder "templates/" as Templates
+  folder "static/glossary/" as Static
+  folder "docs/" as Docs
+}
+
+User --> Project : HTTP request
+Project --> AppUrls : route app URLs
+AppUrls --> [views.py]
+[views.py] --> [forms.py]
+[views.py] --> [models.py]
+[admin.py] --> [models.py]
+[models.py] --> DB
+[views.py] --> Templates : render HTML
+Templates --> Static : CSS
+[load_sample_data.py] --> [models.py] : demo data
+[tests.py] --> App : workflow tests
+
+note bottom of App
+The prototype is intentionally server-rendered.
+Unused Vue/Vite/Tailwind assets were removed
+to keep the thesis implementation coherent.
+end note
+
+@enduml

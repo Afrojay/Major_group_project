@@ -64,3 +64,12 @@ This separation reduces the risk of unvalidated or unsafe sign content being pub
 - Rich video embedding, captions, and media hosting.
 - Broader accessibility testing with Deaf users and ISL stakeholders.
 - Full multi-tenant SaaS operations.
+
+## Thesis diagram sources
+
+PlantUML source files are stored in `docs/diagrams/`:
+
+- `use-case.puml`: system actors and main use cases.
+- `erd.puml`: implemented Django data model.
+- `request-workflow.puml`: sign request triage and publication workflow.
+- `project-structure.puml`: server-rendered Django prototype structure.

@@ -1,0 +1,146 @@
+@startuml
+title ISL Glossary Platform - Entity Relationship Diagram
+
+hide circle
+skinparam linetype ortho
+skinparam shadowing false
+
+entity "auth.User" as User {
+  * id : integer
+  --
+  username : string
+  email : email
+  is_staff : boolean
+}
+
+entity Organisation {
+  * id : integer
+  --
+  name : string
+  slug : slug
+  description : text
+  contact_email : email
+  theme_colour : hex colour
+  logo_url : url
+}
+
+entity Category {
+  * id : integer
+  --
+  organisation_id : FK
+  name : string
+  slug : slug
+  description : text
+}
+
+entity SignEntry {
+  * id : integer
+  --
+  organisation_id : FK
+  category_id : FK
+  term : string
+  slug : slug
+  video_url : url
+  thumbnail_url : url
+  description : text
+  usage_context : text
+  tags : string
+  is_quick_reference : boolean
+  is_official_published : boolean
+}
+
+entity Transcript {
+  * id : integer
+  --
+  sign_id : FK
+  text : text
+  language : string
+}
+
+entity FAQEntry {
+  * id : integer
+  --
+  organisation_id : FK
+  question : string
+  answer : text
+  related_category_id : optional FK
+  related_sign_id : optional FK
+}
+
+entity StaffProfile {
+  * id : integer
+  --
+  user_id : one-to-one FK
+  organisation_id : FK
+  role : string
+  role_type : staff | manager | glossary_manager
+}
+
+entity FavouriteSign {
+  * id : integer
+  --
+  staff_profile_id : FK
+  sign_id : FK
+}
+
+entity SignRequest {
+  * id : integer
+  --
+  organisation_id : FK
+  requested_by_id : optional FK
+  requester_name : string
+  requester_email : email
+  term : string
+  context : text
+  suggested_category_id : optional FK
+  status : request status
+  admin_notes : text
+  approval_notes : text
+  interpreter_notes : text
+}
+
+entity PortalItem {
+  * id : integer
+  --
+  organisation_id : FK
+  created_by_id : optional FK
+  assigned_to_id : optional FK
+  item_type : task | appointment | calendar_event | access_note | note
+  title : string
+  description : text
+  due_at : datetime
+  is_complete : boolean
+}
+
+Organisation ||--o{ Category
+Organisation ||--o{ SignEntry
+Organisation ||--o{ FAQEntry
+Organisation ||--o{ StaffProfile
+Organisation ||--o{ SignRequest
+Organisation ||--o{ PortalItem
+
+Category ||--o{ SignEntry
+Category |o--o{ FAQEntry : optional related category
+Category |o--o{ SignRequest : optional suggestion
+
+SignEntry ||--o| Transcript
+SignEntry ||--o{ FavouriteSign
+SignEntry |o--o{ FAQEntry : optional related sign
+
+User ||--o| StaffProfile
+StaffProfile ||--o{ FavouriteSign
+StaffProfile |o--o{ SignRequest : staff requester
+StaffProfile |o--o{ PortalItem : created by
+StaffProfile |o--o{ PortalItem : assigned to
+
+note bottom of SignEntry
+Unique per organisation:
+organisation + slug
+end note
+
+note bottom of Category
+Unique per organisation:
+organisation + slug
+end note
+
+@enduml

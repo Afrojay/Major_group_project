@@ -1,0 +1,80 @@
+@startuml
+title ISL Glossary Platform - Use Case Diagram
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "Public visitor" as Visitor
+actor "Staff user" as Staff
+actor "Manager" as Manager
+actor "Glossary manager" as GlossaryManager
+actor "Interpreter / content reviewer" as Reviewer
+
+rectangle "Organisation-specific ISL Glossary Platform" {
+  usecase "Open organisation glossary" as UC_Open
+  usecase "Browse categories" as UC_Browse
+  usecase "Search signs" as UC_Search
+  usecase "Filter signs A-Z" as UC_Filter
+  usecase "View sign entry" as UC_View
+  usecase "Submit public sign request" as UC_PublicRequest
+
+  usecase "Log in" as UC_Login
+  usecase "Use staff dashboard" as UC_StaffDashboard
+  usecase "Favourite sign" as UC_Favourite
+  usecase "Submit staff sign request" as UC_StaffRequest
+  usecase "Complete assigned task" as UC_Task
+
+  usecase "Use manager dashboard" as UC_ManagerDashboard
+  usecase "Assign staff tasks" as UC_AssignTask
+  usecase "Review sign requests" as UC_Review
+  usecase "Approve for interpreter review" as UC_Approve
+  usecase "Reject / ask for clarification" as UC_Clarify
+
+  usecase "Manage official content in Django admin" as UC_Admin
+  usecase "Create / update official sign entries" as UC_Content
+}
+
+Visitor --> UC_Open
+Visitor --> UC_Browse
+Visitor --> UC_Search
+Visitor --> UC_Filter
+Visitor --> UC_View
+Visitor --> UC_PublicRequest
+
+Staff --> UC_Login
+Staff --> UC_StaffDashboard
+Staff --> UC_Favourite
+Staff --> UC_StaffRequest
+Staff --> UC_Task
+Staff --> UC_Browse
+Staff --> UC_Search
+Staff --> UC_View
+
+Manager --> UC_ManagerDashboard
+Manager --> UC_AssignTask
+Manager --> UC_Review
+Manager --> UC_Approve
+Manager --> UC_Clarify
+
+GlossaryManager --> UC_ManagerDashboard
+GlossaryManager --> UC_Review
+GlossaryManager --> UC_Admin
+
+Reviewer --> UC_Admin
+Reviewer --> UC_Content
+
+UC_Browse ..> UC_Open : extends
+UC_Search ..> UC_Open : extends
+UC_Filter ..> UC_Open : extends
+UC_View ..> UC_Search : selected result
+UC_Approve ..> UC_Review : manager decision
+UC_Clarify ..> UC_Review : manager decision
+UC_Content ..> UC_Admin : back-office workflow
+
+note right of UC_Admin
+Official publication is deliberately kept
+outside the public/staff portal.
+end note
+
+@enduml

@@ -1,0 +1,51 @@
+@startuml
+title ISL Glossary Platform - Sign Request Review Workflow
+
+skinparam shadowing false
+
+start
+
+if (Requester type?) then (Public visitor)
+  :Open organisation glossary;
+  :Submit request with name and email;
+else (Logged-in staff)
+  :Log in;
+  :System identifies staff profile and organisation;
+  :Submit request without entering email;
+endif
+
+:Create SignRequest;
+:Status = Pending manager review;
+
+partition "Manager / glossary manager dashboard" {
+  :Review request context and suggested category;
+  if (Suitable to progress?) then (Yes)
+    :Set status = Manager approved;
+  elseif (More detail needed?) then (Needs clarification)
+    :Set status = Needs clarification;
+  else (No)
+    :Set status = Rejected;
+  endif
+}
+
+if (Manager approved?) then (Yes)
+  partition "Django admin / content review" {
+    :Interpreter or content reviewer checks sign need;
+    :Prepare official SignEntry if appropriate;
+    :Add video URL, description, context, transcript metadata;
+    :Mark official sign as published;
+    :Set request status = Completed;
+  }
+else (No)
+  :Request remains in manager decision state;
+endif
+
+stop
+
+note right
+This workflow is a security-related design choice:
+staff and managers can request or triage signs,
+but official content publication stays in Django admin.
+end note
+
+@enduml
