@@ -36,6 +36,8 @@ Organisation records support basic database-driven branding through theme colour
 ## Run locally
 
 ```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe manage.py migrate
 .\.venv\Scripts\python.exe manage.py load_sample_data
 .\.venv\Scripts\python.exe manage.py runserver
