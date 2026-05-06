@@ -5,27 +5,63 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}ISL Glossary Platform{% endblock %}</title>
+  
+  <!-- Legacy CSS (will be replaced by Tailwind from Vite) -->
   <link rel="stylesheet" href="{% static 'glossary/styles.css' %}">
+  
+  <!-- Compiled frontend assets -->
+  <link rel="stylesheet" href="{% static 'dist/css/index-Bz5TiWIZ.css' %}">
+  <script type="module" src="{% static 'dist/js/index-BR6MGbN6.js' %}"></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to main content</a>
   <header class="site-header">
     <nav class="nav" aria-label="Primary">
       <a class="brand" href="{% url 'organisation_list' %}">ISL Glossary</a>
-      <div class="nav-actions">
-        {% if user.is_authenticated %}
-          <span class="muted">Signed in as {{ user.username }}</span>
-          <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button class="link-button" type="submit">Log out</button>
-          </form>
-        {% else %}
-          <a href="{% url 'login' %}">Staff login</a>
-        {% endif %}
-        <a href="/admin/">Admin</a>
-      </div>
+      <details class="nav-menu">
+        <summary>Menu</summary>
+        <div class="nav-actions">
+          <a href="{% url 'organisation_list' %}">Home</a>
+          {% if user.is_authenticated %}
+            {% if current_staff_profile and current_staff_organisation %}
+              <a href="{% url 'dashboard_redirect' %}">My dashboard</a>
+              {% if current_staff_profile.can_review_requests %}
+                <a href="{% url 'manager_dashboard' current_staff_organisation.slug %}">Manager dashboard</a>
+              {% else %}
+                <a href="{% url 'staff_dashboard' current_staff_organisation.slug %}">Staff dashboard</a>
+              {% endif %}
+              <a href="{{ current_staff_organisation.get_absolute_url }}">Organisation glossary</a>
+              {% if not current_staff_profile.can_review_requests %}
+                <a href="{% url 'task_board' current_staff_organisation.slug %}">My tasks</a>
+                <a href="{% url 'staff_dashboard' current_staff_organisation.slug %}#favourite-signs">Saved signs</a>
+                <a href="{% url 'staff_dashboard' current_staff_organisation.slug %}#sign-requests">My requests</a>
+              {% endif %}
+              {% if current_staff_profile.can_review_requests %}
+                <a href="{% url 'manager_dashboard' current_staff_organisation.slug %}#review-requests">Review requests</a>
+                <a href="{% url 'manager_dashboard' current_staff_organisation.slug %}#assign-tasks">Assign tasks</a>
+              {% endif %}
+              <a href="{% url 'request_sign' current_staff_organisation.slug %}">Request a sign</a>
+              {% if user.is_staff %}
+                <a href="/admin/">Back-office admin</a>
+              {% endif %}
+            {% else %}
+              <a href="{% url 'dashboard_redirect' %}">My dashboard</a>
+            {% endif %}
+            <span class="muted">Signed in as {{ user.username }}</span>
+            <form method="post" action="{% url 'logout' %}">
+              {% csrf_token %}
+              <button class="link-button" type="submit">Log out</button>
+            </form>
+          {% else %}
+            <a href="{% url 'login' %}">Staff login</a>
+          {% endif %}
+        </div>
+      </details>
     </nav>
   </header>
+
+  <!-- Vue app mount point -->
+  <div id="app"></div>
 
   <main id="main" class="page">
     {% if messages %}

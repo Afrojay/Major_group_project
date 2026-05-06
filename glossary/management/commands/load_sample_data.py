@@ -1,8 +1,9 @@
-from django.core.management.base import BaseCommand
-from django.utils.text import slugify
 from django.contrib.auth.models import User
+from django.core.management.base import BaseCommand
+from django.utils import timezone
+from django.utils.text import slugify
 
-from glossary.models import Category, FAQEntry, Organisation, SignEntry, StaffProfile
+from glossary.models import Category, FAQEntry, Organisation, PortalItem, SignEntry, StaffProfile
 
 
 SAMPLE_DATA = [
@@ -10,40 +11,64 @@ SAMPLE_DATA = [
         "name": "College Computing Department",
         "slug": "college-computing",
         "description": "A sample glossary for computing students and staff, focused on common academic and technical terms.",
+        "contact_email": "computing-access@example.com",
+        "logo_url": "",
         "theme_colour": "#1d4ed8",
         "staff_username": "college_staff",
-        "admin_username": "college_admin",
+        "extra_staff_username": "college_staff_two",
+        "manager_username": "college_manager",
+        "glossary_manager_username": "college_glossary",
         "categories": {
             "Programming": ["Function", "Variable", "Loop", "Debugging"],
             "Databases": ["Database", "Query", "Table"],
             "Student Support": ["Login", "Password", "Assignment"],
         },
+        "portal_items": [
+            ("calendar_event", "Lab support hour", "Drop-in support for login, password, and assignment vocabulary."),
+            ("calendar_event", "Assessment week reminder", "Review common student support signs before the help desk rush."),
+        ],
     },
     {
         "name": "Retail Customer Service",
         "slug": "retail-customer-service",
         "description": "A sample glossary for retail staff who need quick access to common customer service signs.",
+        "contact_email": "retail-access@example.com",
+        "logo_url": "",
         "theme_colour": "#047857",
         "staff_username": "retail_staff",
-        "admin_username": "retail_admin",
+        "extra_staff_username": "retail_staff_two",
+        "manager_username": "retail_manager",
+        "glossary_manager_username": "retail_glossary",
         "categories": {
             "Greetings": ["Hello", "Thank you", "Can I help?"],
             "Payments": ["Card", "Cash", "Receipt"],
             "Store Support": ["Refund", "Exchange", "Queue"],
         },
+        "portal_items": [
+            ("task", "Check refund desk signs", "Review refund and exchange signs before opening."),
+            ("task", "Queue support handover", "Make sure floor staff know where quick reference signs are."),
+        ],
     },
     {
         "name": "Healthcare Reception",
         "slug": "healthcare-reception",
         "description": "A sample glossary for healthcare reception and frontline clinic staff, focused on everyday access and appointment support.",
-        "theme_colour": "#0f766e",
+        "contact_email": "healthcare-access@example.com",
+        "logo_url": "",
+        "theme_colour": "#7c3aed",
         "staff_username": "healthcare_staff",
-        "admin_username": "healthcare_admin",
+        "extra_staff_username": "healthcare_staff_two",
+        "manager_username": "healthcare_manager",
+        "glossary_manager_username": "healthcare_glossary",
         "categories": {
             "Appointments": ["Appointment", "Waiting room", "Doctor", "Nurse"],
             "Reception": ["Name", "Date of birth", "Address", "Interpreter"],
             "Care Support": ["Pain", "Medication", "Emergency", "Help"],
         },
+        "portal_items": [
+            ("appointment", "Interpreter requested", "Reception reminder for a 10:15 appointment."),
+            ("appointment", "New patient check-in", "Prepare name, date of birth, and waiting room signs."),
+        ],
     },
 ]
 
@@ -58,6 +83,8 @@ class Command(BaseCommand):
                 defaults={
                     "name": organisation_data["name"],
                     "description": organisation_data["description"],
+                    "contact_email": organisation_data["contact_email"],
+                    "logo_url": organisation_data["logo_url"],
                     "theme_colour": organisation_data["theme_colour"],
                 },
             )
@@ -114,25 +141,78 @@ class Command(BaseCommand):
                 defaults={
                     "organisation": organisation,
                     "role": "Sample staff user",
-                    "is_organisation_admin": False,
+                    "role_type": StaffProfile.RoleType.STAFF,
                 },
             )
-            admin_user, created = User.objects.get_or_create(
-                username=organisation_data["admin_username"],
+            extra_user, created = User.objects.get_or_create(
+                username=organisation_data["extra_staff_username"],
+                defaults={"email": f"{organisation_data['extra_staff_username']}@example.com"},
+            )
+            if created:
+                extra_user.set_password("prototype123")
+                extra_user.save()
+            extra_profile, _ = StaffProfile.objects.update_or_create(
+                user=extra_user,
                 defaults={
-                    "email": f"{organisation_data['admin_username']}@example.com",
+                    "organisation": organisation,
+                    "role": "Sample staff user",
+                    "role_type": StaffProfile.RoleType.STAFF,
+                },
+            )
+            manager_user, created = User.objects.get_or_create(
+                username=organisation_data["manager_username"],
+                defaults={
+                    "email": f"{organisation_data['manager_username']}@example.com",
+                },
+            )
+            if created:
+                manager_user.set_password("prototype123")
+                manager_user.save()
+            StaffProfile.objects.update_or_create(
+                user=manager_user,
+                defaults={
+                    "organisation": organisation,
+                    "role": "Service manager",
+                    "role_type": StaffProfile.RoleType.MANAGER,
+                },
+            )
+            glossary_user, created = User.objects.get_or_create(
+                username=organisation_data["glossary_manager_username"],
+                defaults={
+                    "email": f"{organisation_data['glossary_manager_username']}@example.com",
                     "is_staff": True,
                 },
             )
             if created:
-                admin_user.set_password("prototype123")
-                admin_user.save()
+                glossary_user.set_password("prototype123")
+                glossary_user.save()
             StaffProfile.objects.update_or_create(
-                user=admin_user,
+                user=glossary_user,
                 defaults={
                     "organisation": organisation,
-                    "role": "Organisation glossary admin",
-                    "is_organisation_admin": True,
+                    "role": "Glossary manager",
+                    "role_type": StaffProfile.RoleType.GLOSSARY_MANAGER,
+                },
+            )
+            for index, (item_type, title, description) in enumerate(organisation_data["portal_items"]):
+                PortalItem.objects.update_or_create(
+                    organisation=organisation,
+                    title=title,
+                    defaults={
+                        "item_type": item_type,
+                        "description": description,
+                        "due_at": timezone.now() + timezone.timedelta(days=index),
+                    },
+                )
+            PortalItem.objects.update_or_create(
+                organisation=organisation,
+                title="Assigned accessibility follow-up",
+                defaults={
+                    "assigned_to": extra_profile,
+                    "created_by": extra_profile,
+                    "item_type": PortalItem.ItemType.TASK,
+                    "description": "Sample assigned task for the staff task board.",
+                    "due_at": timezone.now() + timezone.timedelta(days=1),
                 },
             )
         self.stdout.write(self.style.SUCCESS("Sample ISL glossary data loaded. Demo password: prototype123"))

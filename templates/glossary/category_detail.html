@@ -3,6 +3,7 @@
 {% block title %}{{ category.name }} | {{ organisation.name }}{% endblock %}
 
 {% block content %}
+<div class="org-themed-page" style="--accent: {{ organisation.safe_theme_colour }}">
 <nav class="breadcrumb" aria-label="Breadcrumb">
   <a href="{{ organisation.get_absolute_url }}">{{ organisation.name }}</a>
   <span aria-hidden="true">/</span>
@@ -20,5 +21,6 @@
   {% empty %}
     <p>No signs are currently listed in this category.</p>
   {% endfor %}
+</div>
 </div>
 {% endblock %}

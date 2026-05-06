@@ -1,7 +1,15 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 from django.db import models
 from django.urls import reverse
+from simple_history.models import HistoricalRecords
+
+
+hex_colour_validator = RegexValidator(
+    regex=r"^#[0-9A-Fa-f]{6}$",
+    message="Enter a valid six-digit hex colour, for example #0d6efd.",
+)
 
 
 class TimeStampedModel(models.Model):
@@ -17,13 +25,26 @@ class Organisation(TimeStampedModel):
     slug = models.SlugField(unique=True)
     description = models.TextField(blank=True)
     contact_email = models.EmailField(blank=True)
-    theme_colour = models.CharField(max_length=20, default="#2563eb")
+    theme_colour = models.CharField(
+        max_length=20,
+        default="#0d6efd",
+        validators=[hex_colour_validator],
+    )
+    logo_url = models.URLField(blank=True)
 
     class Meta:
         ordering = ["name"]
 
     def __str__(self):
         return self.name
+
+    @property
+    def safe_theme_colour(self):
+        try:
+            hex_colour_validator(self.theme_colour)
+        except ValidationError:
+            return "#0d6efd"
+        return self.theme_colour
 
     def get_absolute_url(self):
         return reverse("organisation_home", kwargs={"organisation_slug": self.slug})
@@ -76,10 +97,18 @@ class SignEntry(TimeStampedModel):
     term = models.CharField(max_length=200)
     slug = models.SlugField()
     video_url = models.URLField()
+    thumbnail_url = models.URLField(blank=True, help_text="URL to a thumbnail image for the sign video")
     description = models.TextField(blank=True)
     usage_context = models.TextField(blank=True)
     tags = models.CharField(max_length=300, blank=True)
     is_quick_reference = models.BooleanField(default=False)
+    is_official_published = models.BooleanField(
+        default=True,
+        help_text="Whether this sign has been reviewed and approved by interpreters."
+    )
+    
+    # Audit tracking
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ["term"]
@@ -108,6 +137,29 @@ class SignEntry(TimeStampedModel):
                 "sign_slug": self.slug,
             },
         )
+
+
+class Transcript(TimeStampedModel):
+    """Text transcription of an ISL sign for accessibility and search."""
+    sign = models.OneToOneField(
+        SignEntry,
+        related_name="transcript",
+        on_delete=models.CASCADE,
+    )
+    text = models.TextField(
+        help_text="Complete text transcription of the ISL sign for accessibility and search indexing."
+    )
+    language = models.CharField(
+        max_length=10,
+        default="en",
+        help_text="Language code (e.g., 'en' for English, 'ga' for Irish)."
+    )
+
+    class Meta:
+        ordering = ["sign__term"]
+
+    def __str__(self):
+        return f"Transcript for {self.sign.term}"
 
 
 class FAQEntry(TimeStampedModel):
@@ -154,6 +206,11 @@ class FAQEntry(TimeStampedModel):
 
 
 class StaffProfile(TimeStampedModel):
+    class RoleType(models.TextChoices):
+        STAFF = "staff", "Staff"
+        MANAGER = "manager", "Manager"
+        GLOSSARY_MANAGER = "glossary_manager", "Glossary manager"
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         related_name="staff_profile",
@@ -165,13 +222,28 @@ class StaffProfile(TimeStampedModel):
         on_delete=models.CASCADE,
     )
     role = models.CharField(max_length=120, blank=True)
-    is_organisation_admin = models.BooleanField(default=False)
+    role_type = models.CharField(
+        max_length=30,
+        choices=RoleType.choices,
+        default=RoleType.STAFF,
+    )
 
     class Meta:
         ordering = ["organisation__name", "user__username"]
 
     def __str__(self):
         return f"{self.user.get_username()} - {self.organisation.name}"
+
+    @property
+    def can_review_requests(self):
+        return self.role_type in {
+            self.RoleType.MANAGER,
+            self.RoleType.GLOSSARY_MANAGER,
+        }
+
+    @property
+    def can_prepare_glossary_content(self):
+        return self.role_type == self.RoleType.GLOSSARY_MANAGER
 
 
 class FavouriteSign(TimeStampedModel):
@@ -208,10 +280,12 @@ class FavouriteSign(TimeStampedModel):
 
 class SignRequest(TimeStampedModel):
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending"
-        APPROVED = "approved", "Approved"
-        REJECTED = "rejected", "Rejected"
+        PENDING = "pending", "Pending manager review"
         NEEDS_CLARIFICATION = "needs_clarification", "Needs clarification"
+        MANAGER_APPROVED = "manager_approved", "Manager approved"
+        SENT_TO_INTERPRETER = "sent_to_interpreter", "Sent to interpreter"
+        COMPLETED = "completed", "Completed"
+        REJECTED = "rejected", "Rejected"
 
     organisation = models.ForeignKey(
         Organisation,
@@ -242,6 +316,17 @@ class SignRequest(TimeStampedModel):
         default=Status.PENDING,
     )
     admin_notes = models.TextField(blank=True)
+    approval_notes = models.TextField(
+        blank=True,
+        help_text="Manager feedback on the sign request."
+    )
+    interpreter_notes = models.TextField(
+        blank=True,
+        help_text="Notes from interpreter/content review team."
+    )
+    
+    # Audit tracking
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ["-created_at"]
@@ -254,8 +339,70 @@ class SignRequest(TimeStampedModel):
         if self.requested_by_id and self.organisation_id:
             if self.requested_by.organisation_id != self.organisation_id:
                 errors["requested_by"] = "The requester must belong to the same organisation."
+        if self.requested_by_id:
+            self.requester_name = self.requester_name or self.requested_by.user.get_username()
+            self.requester_email = self.requester_email or self.requested_by.user.email
+        elif not self.requester_email:
+            errors["requester_email"] = "Visitor requests need an email address for follow-up."
+        if not self.requested_by_id and not self.requester_name:
+            errors["requester_name"] = "Visitor requests need a requester name."
         if self.suggested_category_id and self.organisation_id:
             if self.suggested_category.organisation_id != self.organisation_id:
                 errors["suggested_category"] = "The suggested category must belong to the same organisation."
+        if errors:
+            raise ValidationError(errors)
+
+
+class PortalItem(TimeStampedModel):
+    class ItemType(models.TextChoices):
+        TASK = "task", "Task"
+        APPOINTMENT = "appointment", "Appointment"
+        CALENDAR_EVENT = "calendar_event", "Calendar event"
+        ACCESS_NOTE = "access_note", "Access note"
+        NOTE = "note", "Note"
+
+    organisation = models.ForeignKey(
+        Organisation,
+        related_name="portal_items",
+        on_delete=models.CASCADE,
+    )
+    created_by = models.ForeignKey(
+        StaffProfile,
+        related_name="created_portal_items",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+    assigned_to = models.ForeignKey(
+        StaffProfile,
+        related_name="assigned_portal_items",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+    item_type = models.CharField(
+        max_length=30,
+        choices=ItemType.choices,
+        default=ItemType.TASK,
+    )
+    title = models.CharField(max_length=160)
+    description = models.TextField(blank=True)
+    due_at = models.DateTimeField(null=True, blank=True)
+    is_complete = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["is_complete", "due_at", "-created_at"]
+
+    def __str__(self):
+        return f"{self.title} ({self.organisation.name})"
+
+    def clean(self):
+        errors = {}
+        if self.created_by_id and self.organisation_id:
+            if self.created_by.organisation_id != self.organisation_id:
+                errors["created_by"] = "The creator must belong to the same organisation."
+        if self.assigned_to_id and self.organisation_id:
+            if self.assigned_to.organisation_id != self.organisation_id:
+                errors["assigned_to"] = "The assigned staff member must belong to the same organisation."
         if errors:
             raise ValidationError(errors)

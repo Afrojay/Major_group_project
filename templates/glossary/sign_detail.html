@@ -3,6 +3,7 @@
 {% block title %}{{ sign.term }} | {{ organisation.name }}{% endblock %}
 
 {% block content %}
+<div class="org-themed-page" style="--accent: {{ organisation.safe_theme_colour }}">
 <nav class="breadcrumb" aria-label="Breadcrumb">
   <a href="{{ organisation.get_absolute_url }}">{{ organisation.name }}</a>
   <span aria-hidden="true">/</span>
@@ -42,4 +43,5 @@
     </div>
   </aside>
 </article>
+</div>
 {% endblock %}

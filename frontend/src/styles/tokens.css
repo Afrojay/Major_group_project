@@ -1,0 +1,70 @@
+:root {
+  color-scheme: light;
+
+  /* Colors */
+  --bg: #f6f8fb;
+  --surface: #ffffff;
+  --ink: #17201c;
+  --muted: #59656f;
+  --line: #d8e0e7;
+  --accent: #0d6efd;
+  --accent-ink: #ffffff;
+
+  /* Shadows */
+  --shadow-subtle: 0 2px 14px rgba(18, 30, 42, 0.05);
+  --shadow-app: 0 12px 30px rgba(18, 30, 42, 0.08);
+
+  /* Motion */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-standard: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Spacing */
+  --gutter: 1rem;
+  --section: 2rem;
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1419;
+    --surface: #1a1e27;
+    --ink: #e8eef5;
+    --muted: #a0a8b2;
+    --line: #2a3442;
+    --accent: #4a9eff;
+    --accent-ink: #000000;
+  }
+}
+
+/* Reset */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.5;
+  transition: background-color var(--transition-standard), color var(--transition-standard);
+}
+
+/* Accessibility: Respect motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -3,10 +3,14 @@
 {% block title %}Request a sign | {{ organisation.name }}{% endblock %}
 
 {% block content %}
-<section class="form-page">
+<section class="form-page org-themed-page" style="--accent: {{ organisation.safe_theme_colour }}">
   <p class="eyebrow">{% if staff_profile %}Staff request{% else %}Visitor request{% endif %}</p>
   <h1>Request a missing sign</h1>
-  <p>Requests are reviewed by organisation admins before any official sign entry is added. Visitors can leave an email address so the organisation can follow up when the request is reviewed.</p>
+  {% if staff_profile %}
+    <p>This request will be linked to your {{ organisation.name }} staff profile. Managers will review it before any approved term is passed to interpreter/content review.</p>
+  {% else %}
+    <p>Requests are reviewed by managers before any approved term is passed to interpreter/content review. Visitors need to leave an email address so the organisation can follow up when the request is reviewed.</p>
+  {% endif %}
 
   <form method="post" class="form-card">
     {% csrf_token %}

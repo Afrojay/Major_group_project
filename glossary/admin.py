@@ -5,6 +5,7 @@ from .models import (
     FAQEntry,
     FavouriteSign,
     Organisation,
+    PortalItem,
     SignEntry,
     SignRequest,
     StaffProfile,
@@ -13,9 +14,20 @@ from .models import (
 
 @admin.register(Organisation)
 class OrganisationAdmin(admin.ModelAdmin):
-    list_display = ("name", "slug", "contact_email", "updated_at")
+    fieldsets = (
+        (None, {"fields": ("name", "slug", "description")}),
+        (
+            "Organisation branding",
+            {"fields": ("theme_colour", "logo_url", "contact_email")},
+        ),
+    )
+    list_display = ("name", "slug", "theme_colour", "contact_email", "updated_at")
     prepopulated_fields = {"slug": ("name",)}
-    search_fields = ("name", "description")
+    search_fields = ("name", "description", "contact_email")
+
+    def save_model(self, request, obj, form, change):
+        obj.full_clean()
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(Category)
@@ -51,8 +63,8 @@ class FAQEntryAdmin(admin.ModelAdmin):
 
 @admin.register(StaffProfile)
 class StaffProfileAdmin(admin.ModelAdmin):
-    list_display = ("user", "organisation", "role", "is_organisation_admin", "updated_at")
-    list_filter = ("organisation", "is_organisation_admin")
+    list_display = ("user", "organisation", "role", "role_type", "updated_at")
+    list_filter = ("organisation", "role_type")
     search_fields = ("user__username", "user__email", "role", "organisation__name")
 
 
@@ -72,6 +84,23 @@ class SignRequestAdmin(admin.ModelAdmin):
     list_display = ("term", "organisation", "requested_by", "requester_email", "status", "created_at")
     list_filter = ("organisation", "status", "suggested_category")
     search_fields = ("term", "context", "admin_notes", "requested_by__user__username")
+
+    def save_model(self, request, obj, form, change):
+        obj.full_clean()
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(PortalItem)
+class PortalItemAdmin(admin.ModelAdmin):
+    list_display = ("title", "organisation", "item_type", "assigned_to", "due_at", "is_complete", "updated_at")
+    list_filter = ("organisation", "item_type", "is_complete", "assigned_to")
+    search_fields = (
+        "title",
+        "description",
+        "organisation__name",
+        "created_by__user__username",
+        "assigned_to__user__username",
+    )
 
     def save_model(self, request, obj, form, change):
         obj.full_clean()

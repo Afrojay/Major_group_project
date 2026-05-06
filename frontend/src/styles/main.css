@@ -1,0 +1,142 @@
+@import './tokens.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Typography */
+@layer components {
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-wider text-muted;
+  }
+
+  .lead {
+    @apply text-lg leading-relaxed;
+  }
+}
+
+/* Interactive elements */
+@layer components {
+  button,
+  a[role="button"],
+  .button {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 font-semibold rounded-md transition-all duration-150 ease-out cursor-pointer;
+    @apply bg-accent text-accent-ink hover:shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .button.secondary {
+    @apply bg-line text-ink hover:bg-muted;
+  }
+
+  /* Improved focus indicators for WCAG AA compliance */
+  button:focus-visible,
+  a[role="button"]:focus-visible,
+  .button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply outline-none ring-2 ring-offset-2 ring-accent;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: more) {
+    button:focus-visible,
+    a[role="button"]:focus-visible,
+    .button:focus-visible {
+      @apply ring-4 ring-offset-1;
+    }
+  }
+
+  a {
+    @apply text-[#075985] font-bold hover:underline transition-colors duration-150;
+  }
+
+  a:focus-visible {
+    @apply outline-none ring-2 ring-offset-2 ring-[#075985] rounded-sm px-1;
+  }
+}
+
+/* Form elements */
+@layer components {
+  input[type="text"],
+  input[type="email"],
+  input[type="search"],
+  input[type="password"],
+  textarea,
+  select {
+    @apply w-full px-3 py-2 border border-line rounded-md bg-surface text-ink transition-colors;
+    @apply focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent;
+  }
+
+  input[aria-invalid="true"],
+  textarea[aria-invalid="true"],
+  select[aria-invalid="true"] {
+    @apply border-red-500 focus:ring-red-500;
+  }
+
+  label {
+    @apply block text-sm font-semibold text-ink mb-1;
+  }
+
+  label[aria-required="true"]::after {
+    @apply text-red-600 ml-1;
+    content: '*';
+  }
+
+  .form-error {
+    @apply text-red-600 text-sm mt-1;
+  }
+
+  .form-hint {
+    @apply text-muted text-sm mt-1;
+  }
+}
+
+/* Cards */
+@layer components {
+  .card {
+    @apply bg-surface border border-line rounded-lg p-4 shadow-subtle hover:shadow-app transition-shadow;
+  }
+}
+
+/* Utilities */
+@layer utilities {
+  .skip-link {
+    @apply absolute left-4 top-[-4rem] px-3 py-2 bg-accent text-accent-ink rounded-md z-10 font-bold;
+  }
+
+  .skip-link:focus {
+    @apply top-4;
+  }
+
+  .muted {
+    @apply text-muted;
+  }
+
+  .container-wide {
+    @apply mx-auto max-w-[1180px] px-4;
+  }
+
+  .grid-3-col {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4;
+  }
+
+  .grid-4-col {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4;
+  }
+
+  /* Ensure icon buttons have visible focus */
+  .icon-button {
+    @apply relative;
+  }
+
+  .icon-button:focus-visible {
+    @apply ring-2 ring-offset-2 ring-accent;
+  }
+}
+
+/* Accessibility: Ensure sufficient color contrast for muted text in important contexts */
+@layer components {
+  .text-muted-important {
+    @apply text-slate-600; /* Darker than --muted for better contrast */
+  }
+}

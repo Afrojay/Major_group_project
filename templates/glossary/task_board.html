@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Tasks | {{ organisation.name }}{% endblock %}
+
+{% block content %}
+<div class="org-themed-page" style="--accent: {{ organisation.safe_theme_colour }}">
+  <section class="section-heading portal-hero">
+    <p class="eyebrow">Task board</p>
+    <h1>{{ organisation.name }} tasks</h1>
+    <p>
+      {% if staff_profile.can_review_requests %}
+        Managers can assign organisation tasks to staff. Staff can mark assigned tasks complete.
+      {% else %}
+        These are the tasks assigned to your staff profile.
+      {% endif %}
+    </p>
+    <div class="actions">
+      <a class="button secondary" href="{% url 'staff_dashboard' organisation.slug %}">Back to dashboard</a>
+    </div>
+  </section>
+
+  <div class="dashboard-workspace">
+    <section class="item-list" aria-label="Task list">
+      {% for task in tasks %}
+        <article class="card portal-item {% if task.is_complete %}is-complete{% endif %}">
+          <div>
+            <p class="eyebrow">{{ task.get_item_type_display }}</p>
+            <h2>{{ task.title }}</h2>
+            {% if task.description %}
+              <p>{{ task.description }}</p>
+            {% endif %}
+            <p class="muted">
+              {% if task.assigned_to %}Assigned to {{ task.assigned_to.user.get_username }}{% else %}Unassigned{% endif %}
+              {% if task.due_at %} - Due {{ task.due_at|date:"j M Y, H:i" }}{% endif %}
+            </p>
+          </div>
+          {% if task.is_complete %}
+            <span class="status">Complete</span>
+          {% else %}
+            <form method="post" action="{% url 'complete_portal_item' organisation.slug task.id %}">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.path }}">
+              <button class="button secondary" type="submit">Mark complete</button>
+            </form>
+          {% endif %}
+        </article>
+      {% empty %}
+        <p>No tasks have been assigned yet.</p>
+      {% endfor %}
+    </section>
+  </div>
+</div>
+{% endblock %}

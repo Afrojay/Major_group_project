@@ -25,12 +25,13 @@ The sample deployments cover college computing, retail customer service, and hea
 3. A visitor browses categories or searches signs within that organisation.
 4. A visitor views a sign entry with term, video URL, description, usage context, and category.
 5. Staff log in through Django authentication.
-6. Staff with an organisation profile can use a basic portal-style dashboard.
-7. Staff can favourite signs from their own organisation.
-8. Staff can submit missing-sign requests for their own organisation.
-9. Visitors can submit missing-sign requests with a contact email.
-10. Organisation admins review request statuses in a domain-specific dashboard.
-11. Admin users manage official content through Django admin.
+6. Staff with an organisation profile are redirected after login to a basic organisation-specific portal dashboard.
+7. The dashboard includes role/domain placeholder panels such as retail tasks, college calendar notes, healthcare reception checks, and manager to-dos.
+8. Staff can favourite signs from their own organisation.
+9. Staff can submit missing-sign requests for their own organisation.
+10. Visitors can submit missing-sign requests with a contact email.
+11. Managers and glossary managers review requests in a domain-specific dashboard.
+12. Approved requests can then be handled through Django admin for interpreter/content review and official publication.
 
 ## Security/design notes
 
@@ -38,14 +39,20 @@ The sample deployments cover college computing, retail customer service, and hea
 - Staff-only workflows check the logged-in user's `StaffProfile`.
 - Favourites and requests are scoped to the staff user's organisation.
 - Staff users submit requests but cannot publish official `SignEntry` content through the public UI.
-- Organisation admin users are represented by a flag on `StaffProfile`.
-- Sign request review is represented through admin-managed statuses.
+- Staff roles are represented on `StaffProfile`: staff, manager, and glossary manager.
+- Managers can triage requests, but they do not publish official signs through the portal.
+- Django admin is treated as the interpreter/content back office for official sign publication.
 - Django CSRF protection and authentication middleware are enabled.
+
+## Security-related design change
+
+The prototype originally considered a broader organisation-admin dashboard for request review. This was refined for security and governance reasons: the public/staff portal now separates request triage from official content publication. Managers and glossary managers can approve, reject, or ask for clarification on requests, but they cannot publish official signs from the portal. Interpreter/content review and official sign creation remain in the Django admin back office.
+
+This separation reduces the risk of unvalidated or unsafe sign content being published directly by service staff, which is especially important for sensitive domains such as healthcare reception.
 
 ## Future work
 
 - Stronger production configuration for secrets, hosts, HTTPS, and deployment.
-- Per-organisation admin dashboards outside Django admin.
 - Email notification when requested signs are reviewed.
 - Audit logging for content changes and request decisions.
 - Data import/export.

@@ -1,12 +1,13 @@
 :root {
   color-scheme: light;
-  --bg: #f7f7f4;
+  --bg: #f6f8fb;
   --surface: #ffffff;
   --ink: #17201c;
-  --muted: #5e6a64;
-  --line: #d9dfd9;
-  --accent: #2563eb;
+  --muted: #59656f;
+  --line: #d8e0e7;
+  --accent: #0d6efd;
   --accent-ink: #ffffff;
+  --shadow: 0 12px 30px rgba(18, 30, 42, .08);
 }
 
 * {
@@ -22,8 +23,18 @@ body {
 }
 
 a {
-  color: #155e75;
+  color: #075985;
   font-weight: 700;
+}
+
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 55%, white);
+  outline-offset: 3px;
 }
 
 .skip-link {
@@ -42,6 +53,7 @@ a {
 .site-header {
   background: var(--surface);
   border-bottom: 1px solid var(--line);
+  box-shadow: 0 2px 14px rgba(18, 30, 42, .05);
   position: sticky;
   top: 0;
   z-index: 5;
@@ -57,6 +69,32 @@ a {
   padding: .85rem 1rem;
 }
 
+.nav-menu {
+  position: relative;
+}
+
+.nav-menu summary {
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 800;
+  list-style: none;
+  padding: .45rem .65rem;
+}
+
+.nav-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.nav-menu summary::after {
+  content: " +";
+}
+
+.nav-menu[open] summary::after {
+  content: " -";
+}
+
 .brand {
   color: var(--ink);
   font-size: 1.1rem;
@@ -64,11 +102,19 @@ a {
 }
 
 .nav-actions {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
+  align-items: flex-start;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  display: grid;
   gap: .8rem;
-  justify-content: flex-end;
+  margin-top: .5rem;
+  padding: .65rem;
+  position: absolute;
+  right: 0;
+  min-width: 240px;
+  z-index: 6;
 }
 
 .nav-actions form {
@@ -88,18 +134,71 @@ a {
 .page {
   margin: 0 auto;
   max-width: 1180px;
-  padding: 1.5rem 1rem 4rem;
+  padding: 1.75rem 1rem 4rem;
 }
 
 .hero,
 .section-heading,
 .form-page {
-  padding: 2rem 0;
+  padding: 2.25rem 0;
+}
+
+.portal-hero {
+  border-bottom: 4px solid var(--accent);
+  margin-bottom: 1.5rem;
+}
+
+.org-themed-page .section-heading,
+.org-themed-page .form-page,
+.org-themed-page.form-page {
+  border-bottom: 4px solid var(--accent);
+  margin-bottom: 1.5rem;
+}
+
+.org-themed-page .breadcrumb {
+  border-left: 5px solid var(--accent);
+  padding-left: .75rem;
+}
+
+.org-themed-page .sign-layout {
+  border-top: 4px solid var(--accent);
+  padding-top: 1.25rem;
+}
+
+.org-themed-page .card {
+  border-top: 4px solid var(--accent);
 }
 
 .hero {
   border-bottom: 4px solid var(--accent);
   margin-bottom: 1.5rem;
+}
+
+.org-hero {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 8%, transparent), transparent);
+  border-radius: 12px;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.org-identity {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+}
+
+.org-logo {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  max-height: 88px;
+  max-width: 160px;
+  object-fit: contain;
+  padding: .5rem;
+}
+
+.contact-line {
+  font-weight: 700;
 }
 
 .hero.compact {
@@ -153,6 +252,13 @@ button {
   font-weight: 800;
   padding: .65rem .9rem;
   text-decoration: none;
+  transition: box-shadow .16s ease, transform .16s ease;
+}
+
+.button:hover,
+button:hover {
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 18%, transparent);
+  transform: translateY(-1px);
 }
 
 .button.secondary {
@@ -183,11 +289,28 @@ button {
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 1rem;
+  box-shadow: 0 8px 20px rgba(18, 30, 42, .04);
 }
 
 .card h2,
 .card h3 {
   margin-top: 0;
+}
+
+.portal-card {
+  border-top: 4px solid var(--accent);
+}
+
+.icon-action {
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  margin: .25rem 0 .75rem;
+}
+
+.card-link {
+  display: inline-block;
+  margin-top: .75rem;
 }
 
 .muted-card {
@@ -209,6 +332,17 @@ button {
   padding: 1rem;
 }
 
+.metric-link {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.metric-link:focus,
+.metric-link:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
 .metric span,
 .large-number {
   display: block;
@@ -226,6 +360,33 @@ button {
 .request-list {
   display: grid;
   gap: 1rem;
+}
+
+.dashboard-workspace {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(240px, 360px) minmax(0, 1fr);
+  margin: 1rem 0 2rem;
+}
+
+.compact-form {
+  align-self: start;
+}
+
+.item-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.portal-item {
+  align-items: start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.portal-item.is-complete {
+  opacity: .72;
 }
 
 .request-card {
@@ -249,6 +410,7 @@ button {
   border-radius: 8px;
   margin-bottom: 2rem;
   padding: 1rem;
+  box-shadow: var(--shadow);
 }
 
 .search label {
@@ -270,6 +432,36 @@ textarea {
   font: inherit;
   padding: .65rem .75rem;
   width: 100%;
+}
+
+.filter-panel {
+  margin-bottom: 2rem;
+}
+
+.filter-panel h2 {
+  font-size: 1rem;
+  margin-bottom: .65rem;
+}
+
+.filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.filter-chip {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  padding: .45rem .75rem;
+  text-decoration: none;
+}
+
+.filter-chip.active,
+.filter-chip:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
 .breadcrumb {
@@ -317,6 +509,7 @@ textarea {
 }
 
 .message {
+  border-left: 5px solid var(--accent);
   border-radius: 6px;
   display: block;
 }
@@ -363,8 +556,26 @@ td {
   .nav,
   .search div,
   .sign-layout,
+  .dashboard-workspace,
+  .org-identity,
   .request-card {
     display: block;
+  }
+
+  .portal-item {
+    display: block;
+  }
+
+  .nav-menu {
+    margin-top: .75rem;
+  }
+
+  .nav-actions {
+    position: static;
+  }
+
+  .org-logo {
+    margin-bottom: 1rem;
   }
 
   .nav-actions {

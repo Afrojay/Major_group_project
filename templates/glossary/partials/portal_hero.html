@@ -1,0 +1,26 @@
+<section class="section-heading portal-hero" style="--accent: {{ organisation.safe_theme_colour }}">
+  <div class="org-identity">
+    {% if organisation.logo_url %}
+      <img class="org-logo" src="{{ organisation.logo_url }}" alt="{{ organisation.name }} logo">
+    {% endif %}
+    <div>
+      <p class="eyebrow">{{ portal_hero.eyebrow }}</p>
+      <h1>{{ portal_hero.title }}</h1>
+    </div>
+  </div>
+  <p>{{ portal_hero.message }}</p>
+  {% if portal_hero.show_time or organisation.contact_email %}
+    <p class="contact-line">
+      {% if portal_hero.show_time %}Local time: {{ current_time|date:"H:i" }}{% endif %}
+      {% if portal_hero.show_time and organisation.contact_email %} - {% endif %}
+      {% if organisation.contact_email %}Contact: <a href="mailto:{{ organisation.contact_email }}">{{ organisation.contact_email }}</a>{% endif %}
+    </p>
+  {% endif %}
+  {% if portal_hero.actions %}
+    <div class="actions">
+      {% for action in portal_hero.actions %}
+        <a class="{{ action.class }}" href="{{ action.href }}">{{ action.label }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+</section>

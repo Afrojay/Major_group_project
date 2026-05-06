@@ -3,59 +3,94 @@
 {% block title %}Staff dashboard | {{ organisation.name }}{% endblock %}
 
 {% block content %}
-<section class="section-heading">
-  <p class="eyebrow">Staff area</p>
-  <h1>My {{ organisation.name }} glossary dashboard</h1>
-  <p>Favourites and sign requests are scoped to your staff profile for this organisation.</p>
-  <div class="actions">
-    <a class="button" href="{% url 'request_sign' organisation.slug %}">Request a missing sign</a>
-    <a class="button secondary" href="{{ organisation.get_absolute_url }}">Browse glossary</a>
-    {% if staff_profile.is_organisation_admin %}
-      <a class="button secondary" href="{% url 'organisation_admin_dashboard' organisation.slug %}">Admin dashboard</a>
+{% include "glossary/partials/portal_hero.html" %}
+
+<section>
+  <h2>Staff portal snapshot</h2>
+  <div class="metric-grid">
+    <a class="metric metric-link" href="#favourite-signs">
+      <span>{{ favourites.count }}</span>
+      <p>Saved signs</p>
+    </a>
+    <a class="metric metric-link" href="#sign-requests">
+      <span>{{ requests.count }}</span>
+      <p>My requests</p>
+    </a>
+    <a class="metric metric-link" href="#recent-signs">
+      <span>{{ quick_reference_count }}</span>
+      <p>Quick references</p>
+    </a>
+    <a class="metric metric-link" href="{% url 'task_board' organisation.slug %}">
+      <span>{{ assigned_task_count }}</span>
+      <p>Assigned tasks</p>
+    </a>
+    {% if staff_profile.can_review_requests %}
+      <a class="metric metric-link" href="{% url 'manager_dashboard' organisation.slug %}">
+        <span>{{ pending_review_count }}</span>
+        <p>Pending reviews</p>
+      </a>
     {% endif %}
   </div>
 </section>
 
 <section>
-  <h2>Staff portal snapshot</h2>
-  <div class="metric-grid">
-    <article class="metric">
-      <span>{{ favourites.count }}</span>
-      <p>Saved signs</p>
-    </article>
-    <article class="metric">
-      <span>{{ requests.count }}</span>
-      <p>My requests</p>
-    </article>
-    <article class="metric">
-      <span>{{ quick_reference_count }}</span>
-      <p>Quick references</p>
-    </article>
-  </div>
-</section>
-
-<section>
-  <h2>Common staff actions</h2>
+  <h2>Today's portal</h2>
   <div class="grid three-col">
-    <article class="card">
-      <h3>Front desk support</h3>
-      <p>Open frequently used signs for everyday service conversations.</p>
-      <a href="{{ organisation.get_absolute_url }}">Open glossary</a>
-    </article>
-    <article class="card">
-      <h3>Missing vocabulary</h3>
-      <p>Suggest terms that would help staff support visitors or service users.</p>
-      <a href="{% url 'request_sign' organisation.slug %}">Submit request</a>
-    </article>
-    <article class="card muted-card">
-      <h3>Training notes</h3>
-      <p>Placeholder for organisation guidance, interpreter policy, and staff onboarding links.</p>
-      <span class="status">Future work</span>
-    </article>
+    {% for card in portal_cards %}
+      <article class="card portal-card">
+        <h3>{{ card.title }}</h3>
+        <p>{{ card.body }}</p>
+        {% if card.action_label %}
+          <button class="icon-action" type="button" aria-label="{{ card.action_label }} prototype action">{{ card.action_label }}</button>
+        {% endif %}
+        <span class="status">{{ card.status }}</span>
+        {% if card.href %}
+          <a class="card-link" href="{{ card.href }}">{{ card.link_label }}</a>
+        {% endif %}
+      </article>
+    {% endfor %}
   </div>
 </section>
 
-<section>
+<section id="portal-items">
+  <h2>{{ portal_item_heading }}</h2>
+  <div class="dashboard-workspace">
+    <form class="form-card compact-form" method="post" action="{% url 'create_portal_item' organisation.slug %}">
+      {% csrf_token %}
+      {{ portal_item_form.as_p }}
+      <button class="button" type="submit">Add item</button>
+    </form>
+
+    <div class="item-list">
+      {% for item in portal_items %}
+        <article class="card portal-item {% if item.is_complete %}is-complete{% endif %}">
+          <div>
+            <p class="eyebrow">{{ item.get_item_type_display }}</p>
+            <h3>{{ item.title }}</h3>
+            {% if item.description %}
+              <p>{{ item.description }}</p>
+            {% endif %}
+            {% if item.due_at %}
+              <p class="muted">{{ item.due_at|date:"j M Y, H:i" }}</p>
+            {% endif %}
+          </div>
+          {% if item.is_complete %}
+            <span class="status">Complete</span>
+          {% else %}
+            <form method="post" action="{% url 'complete_portal_item' organisation.slug item.id %}">
+              {% csrf_token %}
+              <button class="button secondary" type="submit">Mark complete</button>
+            </form>
+          {% endif %}
+        </article>
+      {% empty %}
+        <p>No dashboard items have been added yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section id="favourite-signs">
   <h2>Favourite signs</h2>
   <div class="grid three-col">
     {% for favourite in favourites %}
@@ -66,7 +101,7 @@
   </div>
 </section>
 
-<section>
+<section id="recent-signs">
   <h2>Recently updated signs</h2>
   <div class="grid three-col">
     {% for sign in recent_signs %}
@@ -77,7 +112,7 @@
   </div>
 </section>
 
-<section>
+<section id="sign-requests">
   <h2>My sign requests</h2>
   <div class="table-wrap">
     <table>

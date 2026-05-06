@@ -26,7 +26,7 @@ It is not:
 
 ## Prototype Feature Blueprint
 
-Organisation -> Categories -> Sign entries -> Video URLs / embeds -> Search and browse -> Staff login -> Staff dashboard -> Favourites -> Visitor/staff sign requests -> Organisation admin review -> Django admin content management
+Organisation -> Categories -> Sign entries -> Video URLs / embeds -> Search and browse -> Staff login -> Staff dashboard -> Favourites -> Visitor/staff sign requests -> Manager review -> Interpreter/content review -> Django admin content management
 
 ## Django Models
 
@@ -45,21 +45,36 @@ Organisation -> Categories -> Sign entries -> Video URLs / embeds -> Search and 
 3. They view a sign entry with an English term, ISL video URL, description, usage context and category.
 4. Staff can log in.
 5. Staff can favourite useful signs from their own organisation.
-6. Staff can use a basic dashboard with favourites, recent signs, request history, and portal-style placeholder panels.
+6. Staff can use a basic organisation-specific dashboard with favourites, recent signs, request history, role/domain placeholder panels, and relevant manager actions.
 7. Staff can submit missing-sign requests.
 8. Visitors can submit simpler missing-sign requests with a contact email.
-9. Organisation admins can review request statuses in an organisation-specific dashboard.
-10. Django admin is used for official content management.
+9. Managers and glossary managers can review requests in an organisation-specific dashboard.
+10. Manager-approved requests can be passed to interpreter/content review.
+11. Django admin is used for official content management and publication.
 
 ## Security and Design Principles
 
 - Important content models link to an `Organisation`.
+- Organisation records support basic database-driven branding through theme colour, logo URL, description and contact email. This supports organisation-specific deployment while keeping advanced branding as future work.
 - Staff-only workflows check the logged-in user's `StaffProfile`.
 - Staff access is scoped to their profile's organisation.
 - Staff do not directly publish official signs through the public UI.
-- Organisation admins are staff profiles with an added admin flag, not a full SaaS tenant-admin system.
-- Sign requests use statuses: Pending, Approved, Rejected, Needs clarification.
+- Staff profiles use simple role types: Staff, Manager, and Glossary manager.
+- Managers can approve requests for interpreter/content review, but they do not publish official signs through the portal.
+- Sign requests use statuses: Pending manager review, Needs clarification, Manager approved, Sent to interpreter, Completed, Rejected.
 - Django authentication and CSRF protection are used.
+
+## Security-Related Workflow Refinement
+
+The request review workflow was deliberately changed from a broad organisation-admin concept to a safer role-based process. Managers and glossary managers review whether a request is suitable to progress, while interpreter/content review and official publication remain in Django admin.
+
+This supports a clearer separation of duties:
+
+- staff and visitors can request missing signs
+- managers can triage requests
+- interpreter/content reviewers can handle official glossary publication
+
+The change reduces the risk of unvalidated sign content being published directly through the staff portal.
 
 ## Future Work
 
