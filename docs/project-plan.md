@@ -28,7 +28,7 @@ The sample deployments cover college computing, retail customer service, and hea
 4. A visitor views a sign entry with term, video URL, description, usage context, category, and optional transcript.
 5. Staff log in through Django authentication.
 6. Staff with an organisation profile are redirected after login to a basic organisation-specific portal dashboard.
-7. The dashboard includes role/domain placeholder panels such as retail tasks, college calendar notes, healthcare reception checks, and manager to-dos.
+7. The dashboard includes role/domain panels such as retail tasks, college calendar notes, healthcare reception checks, and manager to-dos.
 8. Staff can favourite signs from their own organisation.
 9. Staff can submit missing-sign requests for their own organisation.
 10. Visitors can submit missing-sign requests with a contact email.

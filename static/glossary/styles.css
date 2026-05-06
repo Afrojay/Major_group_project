@@ -824,7 +824,7 @@ textarea {
   width: 100%;
 }
 
-.video-placeholder {
+.video-reference {
   align-items: center;
   aspect-ratio: 16 / 9;
   background: #17201c;
@@ -845,7 +845,7 @@ textarea {
   padding: 1rem;
 }
 
-.video-placeholder a {
+.video-reference a {
   color: #a7f3d0;
   overflow-wrap: anywhere;
 }

@@ -180,7 +180,7 @@ class GlossaryWorkflowTests(TestCase):
         self.assertContains(response, 'src="https://example.com/login-thumb.jpg"')
         self.assertContains(response, 'alt="Thumbnail for Login ISL video"')
 
-    def test_retail_dashboard_shows_retail_placeholder_widgets(self):
+    def test_retail_dashboard_shows_retail_role_widgets(self):
         retail_user = User.objects.create_user(username="retail", password="pass12345")
         StaffProfile.objects.create(user=retail_user, organisation=self.other_org)
         self.client.login(username="retail", password="pass12345")
@@ -188,7 +188,7 @@ class GlossaryWorkflowTests(TestCase):
         self.assertContains(response, "Clock-in reminder")
         self.assertContains(response, "floor tasks")
 
-    def test_healthcare_dashboard_shows_appointment_placeholder_widgets(self):
+    def test_healthcare_dashboard_shows_appointment_role_widgets(self):
         healthcare = Organisation.objects.create(
             name="Healthcare Reception",
             slug="healthcare-reception",

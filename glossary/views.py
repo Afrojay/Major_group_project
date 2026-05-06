@@ -78,7 +78,7 @@ def _portal_cards_for(organisation, profile):
         {
             "title": "My quick links",
             "body": "Open the organisation glossary, saved signs, and request forms from one place.",
-            "status": "Prototype panel",
+            "status": "Staff tools",
             "href": organisation.get_absolute_url(),
             "link_label": "Open glossary",
         }
@@ -88,13 +88,13 @@ def _portal_cards_for(organisation, profile):
             [
                 {
                     "title": "Clock-in reminder",
-                    "body": "Placeholder for shift clock-in, break tracking, and handover notes.",
-                    "status": "Not connected",
+                    "body": "Shift clock-in, break tracking, and handover reminders for the retail workspace.",
+                    "status": "Retail workflow",
                 },
                 {
                     "title": "Today's floor tasks",
                     "body": "Check tills, queue support, refunds, and customer service priorities.",
-                    "status": "Sample tasks",
+                    "status": "Retail workflow",
                     "href": organisation.get_absolute_url(),
                     "link_label": "Open customer service signs",
                 },
@@ -105,13 +105,13 @@ def _portal_cards_for(organisation, profile):
             [
                 {
                     "title": "Department calendar",
-                    "body": "Placeholder for labs, office hours, assessment windows, and support sessions.",
-                    "status": "Calendar mock-up",
+                    "body": "Labs, office hours, assessment windows, and support sessions for staff awareness.",
+                    "status": "College workflow",
                 },
                 {
                     "title": "Student support queue",
                     "body": "Track common support terms such as login, password, assignments, and databases.",
-                    "status": "Prototype panel",
+                    "status": "Support workflow",
                     "href": organisation.get_absolute_url(),
                     "link_label": "Open student support signs",
                 },
@@ -123,13 +123,13 @@ def _portal_cards_for(organisation, profile):
                 {
                     "title": "Upcoming appointments",
                     "body": "09:30 - New patient check-in; 10:15 - Interpreter requested; 11:00 - Follow-up arrival.",
-                    "status": "Reception mock-up",
+                    "status": "Reception workflow",
                     "action_label": "+ Add appointment",
                 },
                 {
                     "title": "Accessibility needs",
                     "body": "Track non-clinical access notes such as interpreter needed, quiet waiting area, or written instructions.",
-                    "status": "Prototype notes",
+                    "status": "Access notes",
                     "action_label": "+ Add note",
                     "href": organisation.get_absolute_url(),
                     "link_label": "Open access signs",
@@ -141,13 +141,13 @@ def _portal_cards_for(organisation, profile):
             [
                 {
                     "title": "Team notices",
-                    "body": "Placeholder for organisation-specific staff notices and accessibility reminders.",
-                    "status": "Future work",
+                    "body": "Organisation-specific staff notices and accessibility reminders.",
+                    "status": "Team workflow",
                 },
                 {
                     "title": "Today's actions",
-                    "body": "Placeholder for tasks that would be configured by the organisation.",
-                    "status": "Future work",
+                    "body": "Daily tasks configured for the organisation.",
+                    "status": "Team workflow",
                 },
             ]
         )

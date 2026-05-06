@@ -19,7 +19,7 @@
     <p class="lead">{{ sign.description }}</p>
     <p>
       <span class="status">
-        {% if sign.is_official_published %}Official published sign{% else %}Prototype draft sign{% endif %}
+        {% if sign.is_official_published %}Official published sign{% else %}Content under review{% endif %}
       </span>
     </p>
 
@@ -71,10 +71,10 @@
       <p class="muted">External video embedded from YouTube. Source details are recorded in the usage context.</p>
       <p><a href="{{ sign.video_url }}" target="_blank" rel="noopener">Open this video on YouTube</a></p>
     {% else %}
-      <div class="video-placeholder">
-        <p>ISL video reference</p>
-        <a href="{{ sign.video_url }}" target="_blank" rel="noopener">{{ sign.video_url }}</a>
-      </div>
+    <div class="video-reference">
+      <p>ISL video reference</p>
+      <a href="{{ sign.video_url }}" target="_blank" rel="noopener">{{ sign.video_url }}</a>
+    </div>
     {% endif %}
   </aside>
 </article>

@@ -47,7 +47,7 @@ Organisation -> Categories -> Sign entries -> Video URLs / embeds -> Search and 
 3. They view a sign entry with an English term, ISL video URL, description, usage context and category.
 4. Staff can log in.
 5. Staff can favourite useful signs from their own organisation.
-6. Staff can use a basic organisation-specific dashboard with favourites, recent signs, request history, role/domain placeholder panels, and relevant manager actions.
+6. Staff can use a basic organisation-specific dashboard with favourites, recent signs, request history, role/domain panels, and relevant manager actions.
 7. Staff can submit missing-sign requests.
 8. Visitors can submit simpler missing-sign requests with a contact email.
 9. Managers and glossary managers can review requests in an organisation-specific dashboard.

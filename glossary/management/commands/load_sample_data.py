@@ -6,12 +6,11 @@ from django.utils.text import slugify
 from glossary.models import Category, FAQEntry, Organisation, PortalItem, SignEntry, StaffProfile
 
 
-PLACEHOLDER_VIDEO_URL = "https://example.com/placeholder-isl-video"
+FALLBACK_VIDEO_URL = "https://example.com/isl-video-under-review"
 
-# Only a small number of project signs have clear candidate ISL YouTube videos.
-# Other signs intentionally remain as placeholders because many online search results
-# are ASL/BSL rather than Irish Sign Language. This is useful to discuss in the thesis
-# as a limitation and as evidence for why reviewed organisation-specific ISL resources matter.
+# Only a small number of project signs have clear candidate ISL video references.
+# Other signs are marked as needing review because many online results are ASL/BSL
+# rather than Irish Sign Language.
 CANDIDATE_VIDEO_SOURCES = {
     "Hello": {
         "video_url": "https://www.youtube.com/embed/wr-_YGz7oAc",
@@ -116,8 +115,8 @@ def video_details_for(term):
             "is_official_published": False,
         }
     return {
-        "video_url": PLACEHOLDER_VIDEO_URL,
-        "usage_context_extra": "Video status: Placeholder. A suitable verified ISL video was not found during initial searching. Many available results were ASL or BSL rather than ISL, so this sign needs later review or custom content.",
+        "video_url": FALLBACK_VIDEO_URL,
+        "usage_context_extra": "Video status: Needs review. A suitable verified ISL video was not available during initial content sourcing, so this sign needs later review or custom content.",
         "is_official_published": False,
     }
 
@@ -194,9 +193,9 @@ class Command(BaseCommand):
             )
             FAQEntry.objects.update_or_create(
                 organisation=organisation,
-                question="Why do some signs use placeholder videos?",
+                question="Why do some signs need video review?",
                 defaults={
-                    "answer": "Some signs use placeholders because suitable verified Irish Sign Language videos were not found during the prototype search. Many online results were for ASL or BSL rather than ISL. This is recorded as a limitation and future content-review task.",
+                    "answer": "Some signs are marked as needing video review because suitable verified Irish Sign Language videos were not found during initial content sourcing. Many online results were for ASL or BSL rather than ISL, so final deployment would require reviewed ISL content.",
                 },
             )
             FAQEntry.objects.update_or_create(
@@ -217,7 +216,7 @@ class Command(BaseCommand):
                 user=user,
                 defaults={
                     "organisation": organisation,
-                    "role": "Sample staff user",
+                    "role": "Staff user",
                     "role_type": StaffProfile.RoleType.STAFF,
                 },
             )
@@ -232,7 +231,7 @@ class Command(BaseCommand):
                 user=extra_user,
                 defaults={
                     "organisation": organisation,
-                    "role": "Sample staff user",
+                    "role": "Staff user",
                     "role_type": StaffProfile.RoleType.STAFF,
                 },
             )
@@ -288,8 +287,8 @@ class Command(BaseCommand):
                     "assigned_to": extra_profile,
                     "created_by": extra_profile,
                     "item_type": PortalItem.ItemType.TASK,
-                    "description": "Sample assigned task for the staff task board.",
+                    "description": "Assigned task for the staff task board.",
                     "due_at": timezone.now() + timezone.timedelta(days=1),
                 },
             )
-        self.stdout.write(self.style.SUCCESS("Sample ISL glossary data loaded. Demo password: prototype123"))
+        self.stdout.write(self.style.SUCCESS("Demo ISL glossary data loaded. Password: prototype123"))

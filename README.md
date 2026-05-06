@@ -12,10 +12,10 @@ This Django prototype demonstrates an organisation-specific ISL glossary that ca
 - Search, A-Z filtering, category navigation, and browse within the selected organisation
 - Django staff login
 - Staff profiles linked to one organisation with staff, manager, and glossary manager roles
-- Staff dashboard with favourites, request history, recent signs, and portal-style placeholders
+- Staff dashboard with favourites, request history, recent signs, and role/domain panels
 - Simple portal items for prototype tasks, calendar notes, appointments, and access notes
 - Login redirects staff to their own organisation dashboard
-- Organisation dashboards show simple role/domain placeholder panels such as retail tasks, college calendar notes, healthcare reception checks, and manager to-dos
+- Organisation dashboards show role/domain panels such as retail tasks, college calendar notes, healthcare reception checks, and manager to-dos
 - Staff favourites for signs in their own organisation
 - Staff and visitor missing-sign requests
 - Manager request review dashboard

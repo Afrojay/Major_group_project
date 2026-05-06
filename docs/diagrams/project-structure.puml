@@ -41,9 +41,8 @@ Templates --> Static : CSS
 [tests.py] --> App : workflow tests
 
 note bottom of App
-The prototype is intentionally server-rendered.
-Unused Vue/Vite/Tailwind assets were removed
-to keep the thesis implementation coherent.
+The prototype is intentionally server-rendered
+with Django templates and one local CSS layer.
 end note
 
 @enduml
