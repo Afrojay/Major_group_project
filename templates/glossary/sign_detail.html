@@ -24,7 +24,7 @@
     </p>
 
     <h2>Usage context</h2>
-    <p>{{ sign.usage_context }}</p>
+    <p>{{ sign.usage_context|linebreaksbr }}</p>
 
     {% if transcript %}
       <section class="transcript-panel" aria-labelledby="transcript-heading">
@@ -53,10 +53,24 @@
     {% if sign.thumbnail_url %}
       <img class="video-thumbnail" src="{{ sign.thumbnail_url }}" alt="Thumbnail for {{ sign.term }} ISL video">
     {% endif %}
-    <div class="video-placeholder">
-      <p>ISL video reference</p>
-      <a href="{{ sign.video_url }}" target="_blank" rel="noopener">{{ sign.video_url }}</a>
-    </div>
+
+    {% if "youtube.com/embed" in sign.video_url %}
+      <div class="video-embed">
+        <iframe
+          src="{{ sign.video_url }}"
+          title="{{ sign.term }} ISL video"
+          loading="lazy"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen>
+        </iframe>
+      </div>
+      <p class="muted">External video embedded from YouTube. Source details are recorded in the usage context.</p>
+    {% else %}
+      <div class="video-placeholder">
+        <p>ISL video reference</p>
+        <a href="{{ sign.video_url }}" target="_blank" rel="noopener">{{ sign.video_url }}</a>
+      </div>
+    {% endif %}
   </aside>
 </article>
 </div>
