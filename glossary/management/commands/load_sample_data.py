@@ -6,6 +6,40 @@ from django.utils.text import slugify
 from glossary.models import Category, FAQEntry, Organisation, PortalItem, SignEntry, StaffProfile
 
 
+PLACEHOLDER_VIDEO_URL = "https://example.com/placeholder-isl-video"
+
+# Only a small number of project signs have clear candidate ISL YouTube videos.
+# Other signs intentionally remain as placeholders because many online search results
+# are ASL/BSL rather than Irish Sign Language. This is useful to discuss in the thesis
+# as a limitation and as evidence for why reviewed organisation-specific ISL resources matter.
+CANDIDATE_VIDEO_SOURCES = {
+    "Hello": {
+        "video_url": "https://www.youtube.com/embed/wr-_YGz7oAc",
+        "source_label": "DIT Sign Language Society - Basic Phrases in Irish Sign Language 01",
+        "source_url": "https://www.youtube.com/watch?v=wr-_YGz7oAc",
+        "source_note": "Candidate external ISL video. This general phrases video includes Hello/Goodbye and other basic ISL phrases.",
+    },
+    "Thank you": {
+        "video_url": "https://www.youtube.com/embed/gtQMAY1wSq0",
+        "source_label": "Irish Deaf Society - Irish Sign Language for Thank you",
+        "source_url": "https://www.youtube.com/watch?v=gtQMAY1wSq0",
+        "source_note": "Candidate external ISL video from the Irish Deaf Society.",
+    },
+    "Doctor": {
+        "video_url": "https://www.youtube.com/embed/SumBkLk1HDQ",
+        "source_label": "Doctor in Irish Sign Language",
+        "source_url": "https://www.youtube.com/watch?v=SumBkLk1HDQ",
+        "source_note": "Candidate external ISL video. Healthcare vocabulary should still be reviewed before real use.",
+    },
+    "Nurse": {
+        "video_url": "https://www.youtube.com/embed/ZvqREs7aaK0",
+        "source_label": "Nurse in Irish Sign Language",
+        "source_url": "https://www.youtube.com/watch?v=ZvqREs7aaK0",
+        "source_note": "Candidate external ISL video. Healthcare vocabulary should still be reviewed before real use.",
+    },
+}
+
+
 SAMPLE_DATA = [
     {
         "name": "College Computing Department",
@@ -73,6 +107,21 @@ SAMPLE_DATA = [
 ]
 
 
+def video_details_for(term):
+    if term in CANDIDATE_VIDEO_SOURCES:
+        details = CANDIDATE_VIDEO_SOURCES[term]
+        return {
+            "video_url": details["video_url"],
+            "usage_context_extra": f"\n\nVideo source: {details['source_label']} ({details['source_url']}). {details['source_note']}",
+            "is_official_published": False,
+        }
+    return {
+        "video_url": PLACEHOLDER_VIDEO_URL,
+        "usage_context_extra": "\n\nVideo status: Placeholder. A suitable verified ISL video was not found during initial searching. Many available results were ASL or BSL rather than ISL, so this sign needs later review or custom content.",
+        "is_official_published": False,
+    }
+
+
 class Command(BaseCommand):
     help = "Load or refresh sample organisations, categories, signs, and FAQs."
 
@@ -98,15 +147,16 @@ class Command(BaseCommand):
                     },
                 )
                 for term in terms:
+                    video_details = video_details_for(term)
                     SignEntry.objects.update_or_create(
                         organisation=organisation,
                         slug=slugify(term),
                         defaults={
                             "category": category,
                             "term": term,
-                            "video_url": "https://example.com/placeholder-isl-video",
+                            "video_url": video_details["video_url"],
                             "description": f"A common service term for {organisation.name}.",
-                            "usage_context": "This is sample prototype content and should be reviewed before final submission.",
+                            "usage_context": "This is sample prototype content and should be reviewed before final submission." + video_details["usage_context_extra"],
                             "tags": f"{term.lower()}, {category_name.lower()}, {organisation.name.lower()}",
                             "is_quick_reference": term
                             in {
@@ -120,6 +170,7 @@ class Command(BaseCommand):
                                 "Emergency",
                                 "Help",
                             },
+                            "is_official_published": video_details["is_official_published"],
                         },
                     )
             FAQEntry.objects.update_or_create(
@@ -127,6 +178,20 @@ class Command(BaseCommand):
                 question="Is this a complete ISL dictionary?",
                 defaults={
                     "answer": "No. This prototype is an organisation-specific glossary support tool, not a complete national dictionary or replacement for interpreters.",
+                },
+            )
+            FAQEntry.objects.update_or_create(
+                organisation=organisation,
+                question="Why do some signs use placeholder videos?",
+                defaults={
+                    "answer": "Some signs use placeholders because suitable verified Irish Sign Language videos were not found during the prototype search. Many online results were for ASL or BSL rather than ISL. This is recorded as a limitation and future content-review task.",
+                },
+            )
+            FAQEntry.objects.update_or_create(
+                organisation=organisation,
+                question="Where can I find wider ISL resources?",
+                defaults={
+                    "answer": "This prototype should be used as a local glossary support tool only. For wider ISL learning, dictionary resources, Deaf awareness information, and interpreter support, users should consult recognised ISL and Deaf community organisations such as the Irish Deaf Society, DCU ISL STEM Glossary, SLIS/IRIS, and relevant public-service accessibility information.",
                 },
             )
             user, created = User.objects.get_or_create(
