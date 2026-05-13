@@ -156,7 +156,18 @@
           <p v-if="sign.description">[[ sign.description ]]</p>
           <p v-else class="muted">No description has been added yet.</p>
           <p v-if="sign.tags.length" class="tags">[[ sign.tags.join(', ') ]]</p>
-          <a class="button secondary" :href="sign.detail_url">View sign</a>
+          <div class="sign-card-actions">
+            <a class="button secondary" :href="sign.detail_url">View sign</a>
+            <button
+              v-if="sign.can_favourite"
+              class="button secondary"
+              type="button"
+              :aria-pressed="sign.is_favourite ? 'true' : 'false'"
+              :aria-label="favouriteLabel(sign)"
+              @click="toggleFavourite(sign)">
+              [[ sign.is_favourite ? 'Unfavourite' : 'Favourite' ]]
+            </button>
+          </div>
         </article>
 
         <div v-if="!signs.length" class="empty-state">

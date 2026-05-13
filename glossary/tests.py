@@ -103,6 +103,15 @@ class GlossaryWorkflowTests(TestCase):
         payload = response.json()
         login_result = next(item for item in payload["results"] if item["term"] == "Login")
         self.assertTrue(login_result["is_favourite"])
+        self.assertTrue(login_result["can_favourite"])
+        self.assertEqual(login_result["favourite_url"], reverse("toggle_favourite", args=[self.org.slug, self.sign.id]))
+
+    def test_signs_api_does_not_offer_favourites_to_visitors(self):
+        response = self.client.get(reverse("organisation_signs_api", args=[self.org.slug]))
+        payload = response.json()
+        login_result = next(item for item in payload["results"] if item["term"] == "Login")
+        self.assertFalse(login_result["can_favourite"])
+        self.assertFalse(login_result["is_favourite"])
 
     def test_signs_api_rejects_cross_organisation_category_filter(self):
         response = self.client.get(
@@ -382,6 +391,24 @@ class GlossaryWorkflowTests(TestCase):
         )
         self.assertRedirects(response, reverse("sign_detail", args=[self.org.slug, self.sign.slug]))
         self.assertTrue(FavouriteSign.objects.filter(staff_profile=self.profile, sign=self.sign).exists())
+
+    def test_staff_can_toggle_favourite_with_json_for_vue(self):
+        self.client.login(username="staff", password="pass12345")
+        response = self.client.post(
+            reverse("toggle_favourite", args=[self.org.slug, self.sign.id]),
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()["is_favourite"])
+        self.assertTrue(FavouriteSign.objects.filter(staff_profile=self.profile, sign=self.sign).exists())
+
+        response = self.client.post(
+            reverse("toggle_favourite", args=[self.org.slug, self.sign.id]),
+            HTTP_ACCEPT="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()["is_favourite"])
+        self.assertFalse(FavouriteSign.objects.filter(staff_profile=self.profile, sign=self.sign).exists())
 
     def test_staff_cannot_favourite_other_organisation_sign(self):
         self.client.login(username="staff", password="pass12345")

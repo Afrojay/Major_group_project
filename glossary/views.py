@@ -93,6 +93,13 @@ def _serialise_sign(sign, favourite_ids=None):
         "is_official_published": sign.is_official_published,
         "is_favourite": sign.id in favourite_ids,
         "detail_url": sign.get_absolute_url(),
+        "favourite_url": reverse(
+            "toggle_favourite",
+            kwargs={
+                "organisation_slug": sign.organisation.slug,
+                "sign_id": sign.id,
+            },
+        ),
     }
 
 
@@ -348,6 +355,10 @@ def organisation_signs_api(request, organisation_slug):
     favourite_ids = set()
     if profile:
         favourite_ids = set(profile.favourites.values_list("sign_id", flat=True))
+    can_favourite = profile is not None
+    results = [_serialise_sign(sign, favourite_ids) for sign in signs]
+    for sign_data in results:
+        sign_data["can_favourite"] = can_favourite
     return JsonResponse(
         {
             "organisation": {
@@ -361,7 +372,7 @@ def organisation_signs_api(request, organisation_slug):
                 "letter": selected_letter,
             },
             "count": signs.count(),
-            "results": [_serialise_sign(sign, favourite_ids) for sign in signs],
+            "results": results,
         }
     )
 
@@ -570,11 +581,26 @@ def toggle_favourite(request, organisation_slug, sign_id):
     profile = _require_staff_profile(request.user, organisation)
     sign = get_object_or_404(SignEntry, id=sign_id, organisation=organisation)
     favourite, created = FavouriteSign.objects.get_or_create(staff_profile=profile, sign=sign)
+    is_favourite = created
     if created:
         messages.success(request, f"{sign.term} was added to your favourites.")
     else:
         favourite.delete()
+        is_favourite = False
         messages.info(request, f"{sign.term} was removed from your favourites.")
+    if request.headers.get("Accept") == "application/json":
+        return JsonResponse(
+            {
+                "id": sign.id,
+                "term": sign.term,
+                "is_favourite": is_favourite,
+                "message": (
+                    f"{sign.term} was added to your favourites."
+                    if is_favourite
+                    else f"{sign.term} was removed from your favourites."
+                ),
+            }
+        )
     return redirect(request.POST.get("next") or sign.get_absolute_url())
 
 

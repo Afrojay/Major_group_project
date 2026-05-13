@@ -793,6 +793,18 @@ textarea {
   margin-top: auto;
 }
 
+.sign-card-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-top: auto;
+}
+
+.sign-card-actions .button {
+  margin-top: 0;
+}
+
 .sign-card-head {
   align-items: center;
   display: flex;
