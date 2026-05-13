@@ -3,6 +3,8 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.urls import reverse
 
+from glossary.management.commands.load_sample_data import description_for
+
 from .models import Category, FavouriteSign, Organisation, PortalItem, SignEntry, SignRequest, StaffProfile, Transcript
 
 
@@ -124,6 +126,24 @@ class GlossaryWorkflowTests(TestCase):
         response = self.client.get(reverse("organisation_list"))
         self.assertContains(response, '<details class="nav-menu">')
         self.assertContains(response, "<summary>Menu</summary>")
+
+    def test_flash_messages_are_dismissible(self):
+        self.client.login(username="staff", password="pass12345")
+        response = self.client.post(
+            reverse("toggle_favourite", args=[self.org.slug, self.sign.id]),
+            {"next": reverse("sign_detail", args=[self.org.slug, self.sign.slug])},
+            follow=True,
+        )
+        self.assertContains(response, "data-auto-dismiss-messages")
+        self.assertContains(response, "data-dismiss-message")
+        self.assertContains(response, "messages.js")
+
+    def test_sample_descriptions_are_dictionary_style(self):
+        self.assertEqual(
+            description_for(self.sign.term, self.org),
+            "The process of entering account details to access a computer system or online service.",
+        )
+        self.assertNotIn("common service term", description_for("Assignment", self.org))
 
     def test_organisation_page_renders_branding_content(self):
         self.org.description = "Computing support glossary."

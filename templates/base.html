@@ -57,14 +57,18 @@
 
   <main id="main" class="page">
     {% if messages %}
-      <div class="messages" aria-live="polite">
+      <div class="messages" aria-live="polite" data-auto-dismiss-messages>
         {% for message in messages %}
-          <p class="message {{ message.tags }}">{{ message }}</p>
+          <div class="message {{ message.tags }}" data-message>
+            <p>{{ message }}</p>
+            <button class="message-close" type="button" aria-label="Dismiss message" data-dismiss-message>Dismiss</button>
+          </div>
         {% endfor %}
       </div>
     {% endif %}
     {% block content %}{% endblock %}
   </main>
+  <script src="{% static 'glossary/messages.js' %}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

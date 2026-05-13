@@ -38,6 +38,40 @@ CANDIDATE_VIDEO_SOURCES = {
     },
 }
 
+TERM_DESCRIPTIONS = {
+    "Function": "A named block of code that performs a specific task and can be reused in a program.",
+    "Variable": "A named storage value in a program, used to hold information that may change.",
+    "Loop": "A programming structure that repeats a set of instructions until a condition is met.",
+    "Debugging": "The process of finding, understanding, and fixing errors in code.",
+    "Database": "An organised collection of data that can be stored, searched, updated, and managed.",
+    "Query": "A request for information from a database, often written in a language such as SQL.",
+    "Table": "A database structure made up of rows and columns for storing related information.",
+    "Login": "The process of entering account details to access a computer system or online service.",
+    "Password": "A private word, phrase, or code used to help prove a user's identity.",
+    "Assignment": "Coursework or a learning task given to students for completion and assessment.",
+    "Hello": "A greeting used when meeting someone or beginning a conversation.",
+    "Thank you": "An expression used to show appreciation or acknowledge help.",
+    "Can I help?": "A customer service question used to offer assistance.",
+    "Card": "A payment card, such as a debit or credit card, used to pay electronically.",
+    "Cash": "Physical money, such as coins or notes, used for payment.",
+    "Receipt": "A record of a purchase or payment given to a customer.",
+    "Refund": "Money returned to a customer after a product or service is returned or cancelled.",
+    "Exchange": "The process of replacing one purchased item with another.",
+    "Queue": "A line of people waiting for service in order.",
+    "Appointment": "An arranged time to meet a person or attend a service.",
+    "Waiting room": "An area where people wait before an appointment or service.",
+    "Doctor": "A qualified healthcare professional who diagnoses and treats health conditions.",
+    "Nurse": "A healthcare professional who supports patient care and clinical services.",
+    "Name": "The word or words used to identify a person.",
+    "Date of birth": "The day, month, and year when a person was born.",
+    "Address": "The place where a person lives or where correspondence can be sent.",
+    "Interpreter": "A trained professional who translates between signed and spoken or written languages.",
+    "Pain": "Physical discomfort or suffering that a person may need to describe.",
+    "Medication": "Medicine used to treat, manage, or prevent a health condition.",
+    "Emergency": "A serious or urgent situation that needs immediate attention.",
+    "Help": "Assistance or support given to someone who needs it.",
+}
+
 
 SAMPLE_DATA = [
     {
@@ -128,6 +162,10 @@ def usage_context_for(organisation, category_name, term, video_note):
     )
 
 
+def description_for(term, organisation):
+    return TERM_DESCRIPTIONS.get(term, f"A glossary term used in the {organisation.name} context.")
+
+
 class Command(BaseCommand):
     help = "Load or refresh sample organisations, categories, signs, and FAQs."
 
@@ -161,7 +199,7 @@ class Command(BaseCommand):
                             "category": category,
                             "term": term,
                             "video_url": video_details["video_url"],
-                            "description": f"A common service term for {organisation.name}.",
+                            "description": description_for(term, organisation),
                             "usage_context": usage_context_for(
                                 organisation,
                                 category_name,
