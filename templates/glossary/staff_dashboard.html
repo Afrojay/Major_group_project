@@ -79,9 +79,10 @@
   v-cloak>
   <div class="section-kicker">
     <div>
-      <p class="eyebrow">Vue enhanced</p>
-      <h2>Saved signs and requests</h2>
+      <p class="eyebrow">At a glance</p>
+      <h2>Your glossary activity</h2>
     </div>
+    <a href="{% url 'request_sign' organisation.slug %}">New request</a>
     <span class="status" aria-live="polite">[[ summaryText ]]</span>
   </div>
 
@@ -91,7 +92,7 @@
   </div>
 
   <div v-else class="dashboard-vue-grid">
-    <section aria-labelledby="vue-favourites-heading">
+    <section data-dashboard-target="favourite-signs" aria-labelledby="vue-favourites-heading">
       <h3 id="vue-favourites-heading">Favourite signs</h3>
       <div class="item-list">
         <article v-for="sign in favourites" :key="sign.id" class="card mini-sign-card">
@@ -103,7 +104,7 @@
       </div>
     </section>
 
-    <section aria-labelledby="vue-recent-heading">
+    <section data-dashboard-target="recent-signs" aria-labelledby="vue-recent-heading">
       <h3 id="vue-recent-heading">Recent signs</h3>
       <div class="item-list">
         <article v-for="sign in recentSigns" :key="sign.id" class="card mini-sign-card">
@@ -115,7 +116,7 @@
       </div>
     </section>
 
-    <section aria-labelledby="vue-requests-heading">
+    <section data-dashboard-target="sign-requests" aria-labelledby="vue-requests-heading">
       <h3 id="vue-requests-heading">Recent requests</h3>
       <div class="item-list">
         <article v-for="request in requests" :key="request.id" class="card mini-sign-card">
@@ -173,7 +174,7 @@
   </div>
 </section>
 
-<section id="favourite-signs" class="dashboard-section">
+<section id="favourite-signs" class="dashboard-section dashboard-detail-fallback">
   <div class="section-kicker">
     <div>
       <p class="eyebrow">Saved for later</p>
@@ -189,7 +190,7 @@
   </div>
 </section>
 
-<section id="recent-signs" class="dashboard-section">
+<section id="recent-signs" class="dashboard-section dashboard-detail-fallback">
   <div class="section-kicker">
     <div>
       <p class="eyebrow">Glossary changes</p>
@@ -205,7 +206,7 @@
   </div>
 </section>
 
-<section id="sign-requests" class="dashboard-section">
+<section id="sign-requests" class="dashboard-section dashboard-detail-fallback">
   <div class="section-kicker">
     <div>
       <p class="eyebrow">Follow-up</p>

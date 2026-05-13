@@ -209,6 +209,9 @@ class GlossaryWorkflowTests(TestCase):
         self.assertContains(response, 'id="favourite-signs"')
         self.assertContains(response, 'id="sign-requests"')
         self.assertContains(response, 'id="vue-staff-dashboard"')
+        self.assertContains(response, 'data-dashboard-target="favourite-signs"')
+        self.assertContains(response, 'class="dashboard-section dashboard-detail-fallback"')
+        self.assertContains(response, "Your glossary activity")
         self.assertContains(response, reverse("staff_dashboard_api", args=[self.org.slug]))
         self.assertContains(response, "vue-staff-dashboard.js")
 

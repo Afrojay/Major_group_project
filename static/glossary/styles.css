@@ -40,6 +40,10 @@
   display: block;
 }
 
+.vue-ready .dashboard-detail-fallback {
+  display: none;
+}
+
 .vue-ready .django-glossary-fallback,
 .vue-ready .django-sign-detail-fallback {
   display: none;
@@ -568,8 +572,16 @@ button:hover {
   grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
 }
 
+.dashboard-vue-grid > section {
+  scroll-margin-top: 6rem;
+}
+
 .mini-sign-card h4 {
   margin: .15rem 0 .4rem;
+}
+
+.mini-sign-card p {
+  margin-bottom: .35rem;
 }
 
 .compact-form {
