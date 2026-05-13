@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}{{ organisation.name }} | ISL Glossary{% endblock %}
 
@@ -91,6 +92,81 @@
   </aside>
 
   <section class="glossary-main" aria-labelledby="glossary-results-heading">
+    <div
+      id="vue-glossary-app"
+      class="vue-glossary"
+      data-api-url="{% url 'organisation_signs_api' organisation.slug %}"
+      data-initial-query="{{ query }}"
+      data-initial-category="{{ selected_category_slug }}"
+      data-initial-letter="{{ selected_letter }}"
+      v-cloak>
+      <form class="search compact-search" role="search" @submit.prevent="fetchSigns">
+        <label for="vue-q">Search this glossary</label>
+        <div>
+          <input
+            id="vue-q"
+            v-model="filters.q"
+            type="search"
+            placeholder="Search term, context, tag, or category"
+            @input="fetchSigns">
+          <button type="submit">Search</button>
+        </div>
+      </form>
+
+      <nav class="alphabet-strip" aria-label="Filter glossary by first letter">
+        <button
+          class="letter-chip"
+          :class="{ active: !filters.letter }"
+          type="button"
+          @click="setLetter('')">
+          All
+        </button>
+        {% for letter in alphabet %}
+          <button
+            class="letter-chip"
+            :class="{ active: filters.letter === '{{ letter }}' }"
+            type="button"
+            @click="setLetter('{{ letter }}')">
+            {{ letter }}
+          </button>
+        {% endfor %}
+      </nav>
+
+      <div class="section-kicker glossary-results-heading" aria-live="polite">
+        <div>
+          <p class="eyebrow">Vue enhanced glossary terms</p>
+          <h2>[[ headingText ]]</h2>
+        </div>
+        <span class="status">[[ countText ]]</span>
+      </div>
+
+      <p v-if="errorMessage" class="message error">[[ errorMessage ]]</p>
+
+      <div v-if="isLoading" class="empty-state" role="status">
+        <p>Loading signs...</p>
+      </div>
+
+      <div v-else class="glossary-grid">
+        <article v-for="sign in signs" :key="sign.id" class="card sign-card">
+          <div class="sign-card-head">
+            <p class="eyebrow">[[ sign.category.name ]]</p>
+            <span v-if="sign.is_favourite" class="status">Saved</span>
+          </div>
+          <h3><a :href="sign.detail_url">[[ sign.term ]]</a></h3>
+          <p v-if="sign.description">[[ sign.description ]]</p>
+          <p v-else class="muted">No description has been added yet.</p>
+          <p v-if="sign.tags.length" class="tags">[[ sign.tags.join(', ') ]]</p>
+          <a class="button secondary" :href="sign.detail_url">View sign</a>
+        </article>
+
+        <div v-if="!signs.length" class="empty-state">
+          <h3>No signs found</h3>
+          <p>No signs matched this search. Try another search term or letter.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="django-glossary-fallback">
     <form class="search compact-search" method="get" role="search">
       <label for="q">Search this glossary</label>
       <div>
@@ -145,6 +221,7 @@
         </div>
       {% endfor %}
     </div>
+    </div>
   </section>
 </div>
 
@@ -161,4 +238,10 @@
   </div>
 </section>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'glossary/vue.global.prod.js' %}"></script>
+  <script src="{% static 'glossary/vue-glossary.js' %}"></script>
 {% endblock %}
