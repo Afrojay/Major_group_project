@@ -20,7 +20,7 @@
       dismissButton.addEventListener("click", () => dismissMessage(message));
     }
 
-    const timer = window.setTimeout(() => dismissMessage(message), 6500);
+    const timer = window.setTimeout(() => dismissMessage(message), 3500);
     message.addEventListener("focusin", () => window.clearTimeout(timer), { once: true });
     message.addEventListener("mouseenter", () => window.clearTimeout(timer), { once: true });
   });
