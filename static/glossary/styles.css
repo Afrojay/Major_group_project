@@ -20,11 +20,28 @@
   display: none;
 }
 
+.vue-sign-detail {
+  display: none;
+}
+
+.vue-staff-dashboard {
+  display: none;
+}
+
 .vue-ready .vue-glossary {
   display: block;
 }
 
-.vue-ready .django-glossary-fallback {
+.vue-ready .vue-sign-detail {
+  display: grid;
+}
+
+.vue-ready .vue-staff-dashboard {
+  display: block;
+}
+
+.vue-ready .django-glossary-fallback,
+.vue-ready .django-sign-detail-fallback {
   display: none;
 }
 
@@ -543,6 +560,16 @@ button:hover {
   gap: 1rem;
   grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
   margin: 1rem 0 2rem;
+}
+
+.dashboard-vue-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.mini-sign-card h4 {
+  margin: .15rem 0 .4rem;
 }
 
 .compact-form {

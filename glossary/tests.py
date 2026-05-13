@@ -202,6 +202,37 @@ class GlossaryWorkflowTests(TestCase):
         self.assertContains(response, 'href="#recent-signs"')
         self.assertContains(response, 'id="favourite-signs"')
         self.assertContains(response, 'id="sign-requests"')
+        self.assertContains(response, 'id="vue-staff-dashboard"')
+        self.assertContains(response, reverse("staff_dashboard_api", args=[self.org.slug]))
+        self.assertContains(response, "vue-staff-dashboard.js")
+
+    def test_staff_dashboard_api_returns_staff_scoped_summary_for_vue(self):
+        FavouriteSign.objects.create(staff_profile=self.profile, sign=self.sign)
+        SignRequest.objects.create(
+            organisation=self.org,
+            requested_by=self.profile,
+            term="Printer",
+            context="Needed at the help desk.",
+        )
+        SignRequest.objects.create(
+            organisation=self.other_org,
+            term="Other request",
+            requester_name="Visitor",
+            requester_email="visitor@example.com",
+            context="Other organisation.",
+        )
+        self.client.login(username="staff", password="pass12345")
+        response = self.client.get(reverse("staff_dashboard_api", args=[self.org.slug]))
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["organisation"]["slug"], self.org.slug)
+        self.assertEqual(payload["favourites"][0]["term"], "Login")
+        self.assertEqual(payload["requests"][0]["term"], "Printer")
+        self.assertNotIn("Other request", [item["term"] for item in payload["requests"]])
+
+    def test_staff_dashboard_api_requires_login(self):
+        response = self.client.get(reverse("staff_dashboard_api", args=[self.org.slug]))
+        self.assertEqual(response.status_code, 302)
 
     def test_manager_dashboard_uses_organisation_theme(self):
         self.org.theme_colour = "#123abc"
@@ -228,6 +259,9 @@ class GlossaryWorkflowTests(TestCase):
         self.assertContains(response, "Transcript text for the login sign.")
         self.assertContains(response, 'src="https://example.com/login-thumb.jpg"')
         self.assertContains(response, 'alt="Thumbnail for Login ISL video"')
+        self.assertContains(response, 'id="vue-sign-detail"')
+        self.assertContains(response, 'id="sign-detail-data"')
+        self.assertContains(response, "vue-sign-detail.js")
 
     def test_retail_dashboard_shows_retail_role_widgets(self):
         retail_user = User.objects.create_user(username="retail", password="pass12345")

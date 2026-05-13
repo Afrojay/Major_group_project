@@ -22,6 +22,7 @@ This Django prototype demonstrates an organisation-specific ISL glossary that ca
 - Request statuses: Pending manager review, Needs clarification, Manager approved, Sent to interpreter, Completed, Rejected
 - Manager approval and interpreter notes on sign requests
 - Django admin content management
+- Progressive Vue enhancements for glossary search, favourites, request-form feedback, sign details, and staff dashboard summaries
 
 ## Not implemented
 
@@ -32,6 +33,8 @@ Healthcare examples are included only as prototype service-access vocabulary. Th
 The manager review flow is a security-related design choice. Managers can triage requests, but official sign publication remains in the Django admin back office so unvalidated glossary content is not published directly from the staff portal.
 
 Organisation records support basic database-driven branding through theme colour, logo URL, description and contact email. This supports organisation-specific deployment while keeping advanced branding as future work.
+
+Vue is integrated progressively inside Django templates rather than as a separate single-page application. See `docs/vue-integration.md` for the architectural notes and testing approach.
 
 ## Run locally
 

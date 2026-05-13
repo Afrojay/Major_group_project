@@ -103,6 +103,19 @@ def _serialise_sign(sign, favourite_ids=None):
     }
 
 
+def _serialise_sign_detail(sign, transcript=None, is_favourite=False, can_favourite=False):
+    sign_data = _serialise_sign(sign, {sign.id} if is_favourite else set())
+    sign_data["can_favourite"] = can_favourite
+    sign_data["is_youtube_embed"] = "youtube.com/embed" in sign.video_url
+    sign_data["transcript"] = None
+    if transcript:
+        sign_data["transcript"] = {
+            "text": transcript.text,
+            "language": transcript.language,
+        }
+    return sign_data
+
+
 def _portal_cards_for(organisation, profile):
     slug = organisation.slug
     cards = [
@@ -420,6 +433,12 @@ def sign_detail(request, organisation_slug, sign_slug):
             "transcript": transcript,
             "staff_profile": profile,
             "is_favourite": is_favourite,
+            "sign_payload": _serialise_sign_detail(
+                sign,
+                transcript=transcript,
+                is_favourite=is_favourite,
+                can_favourite=profile is not None,
+            ),
         },
     )
 
@@ -462,6 +481,47 @@ def staff_dashboard(request, organisation_slug):
             "portal_hero": _portal_hero_context(request.user, profile, organisation, "staff"),
             "current_time": timezone.localtime(),
         },
+    )
+
+
+@login_required
+def staff_dashboard_api(request, organisation_slug):
+    organisation = get_object_or_404(Organisation, slug=organisation_slug)
+    profile = _require_staff_profile(request.user, organisation)
+    favourites = profile.favourites.select_related("sign", "sign__category", "sign__organisation")[:6]
+    favourite_ids = {favourite.sign_id for favourite in favourites}
+    recent_signs = organisation.signs.select_related("category", "organisation").order_by("-updated_at")[:6]
+    requests = profile.sign_requests.select_related("suggested_category")[:6]
+    return JsonResponse(
+        {
+            "organisation": {
+                "id": organisation.id,
+                "name": organisation.name,
+                "slug": organisation.slug,
+            },
+            "favourites": [
+                _serialise_sign(favourite.sign, favourite_ids)
+                for favourite in favourites
+            ],
+            "recent_signs": [
+                _serialise_sign(sign, favourite_ids)
+                for sign in recent_signs
+            ],
+            "requests": [
+                {
+                    "id": sign_request.id,
+                    "term": sign_request.term,
+                    "category": (
+                        sign_request.suggested_category.name
+                        if sign_request.suggested_category
+                        else "Not specified"
+                    ),
+                    "status": sign_request.get_status_display(),
+                    "created_at": sign_request.created_at.strftime("%d %b %Y"),
+                }
+                for sign_request in requests
+            ],
+        }
     )
 
 

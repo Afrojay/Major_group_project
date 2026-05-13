@@ -27,6 +27,11 @@ urlpatterns = [
         name="staff_dashboard",
     ),
     path(
+        "org/<slug:organisation_slug>/dashboard/api/",
+        views.staff_dashboard_api,
+        name="staff_dashboard_api",
+    ),
+    path(
         "org/<slug:organisation_slug>/dashboard/items/",
         views.create_portal_item,
         name="create_portal_item",

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Staff dashboard | {{ organisation.name }}{% endblock %}
 
@@ -68,6 +69,64 @@
         {% endif %}
       </article>
     {% endfor %}
+  </div>
+</section>
+
+<section
+  id="vue-staff-dashboard"
+  class="dashboard-section vue-staff-dashboard"
+  data-api-url="{% url 'staff_dashboard_api' organisation.slug %}"
+  v-cloak>
+  <div class="section-kicker">
+    <div>
+      <p class="eyebrow">Vue enhanced</p>
+      <h2>Saved signs and requests</h2>
+    </div>
+    <span class="status" aria-live="polite">[[ summaryText ]]</span>
+  </div>
+
+  <p v-if="errorMessage" class="message error">[[ errorMessage ]]</p>
+  <div v-if="isLoading" class="empty-state" role="status">
+    <p>Loading dashboard summary...</p>
+  </div>
+
+  <div v-else class="dashboard-vue-grid">
+    <section aria-labelledby="vue-favourites-heading">
+      <h3 id="vue-favourites-heading">Favourite signs</h3>
+      <div class="item-list">
+        <article v-for="sign in favourites" :key="sign.id" class="card mini-sign-card">
+          <p class="eyebrow">[[ sign.category.name ]]</p>
+          <h4><a :href="sign.detail_url">[[ sign.term ]]</a></h4>
+          <p v-if="sign.description">[[ sign.description ]]</p>
+        </article>
+        <p v-if="!favourites.length">You have not favourited any signs yet.</p>
+      </div>
+    </section>
+
+    <section aria-labelledby="vue-recent-heading">
+      <h3 id="vue-recent-heading">Recent signs</h3>
+      <div class="item-list">
+        <article v-for="sign in recentSigns" :key="sign.id" class="card mini-sign-card">
+          <p class="eyebrow">[[ sign.category.name ]]</p>
+          <h4><a :href="sign.detail_url">[[ sign.term ]]</a></h4>
+          <span v-if="sign.is_favourite" class="status">Saved</span>
+        </article>
+        <p v-if="!recentSigns.length">No signs have been added yet.</p>
+      </div>
+    </section>
+
+    <section aria-labelledby="vue-requests-heading">
+      <h3 id="vue-requests-heading">Recent requests</h3>
+      <div class="item-list">
+        <article v-for="request in requests" :key="request.id" class="card mini-sign-card">
+          <p class="eyebrow">[[ request.category ]]</p>
+          <h4>[[ request.term ]]</h4>
+          <p><span class="status">[[ request.status ]]</span></p>
+          <p class="muted">Submitted [[ request.created_at ]]</p>
+        </article>
+        <p v-if="!requests.length">No sign requests submitted yet.</p>
+      </div>
+    </section>
   </div>
 </section>
 
@@ -180,4 +239,10 @@
   </div>
 </section>
 </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'glossary/vue.global.prod.js' %}"></script>
+  <script src="{% static 'glossary/vue-staff-dashboard.js' %}"></script>
 {% endblock %}
