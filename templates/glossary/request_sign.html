@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Request a sign | {{ organisation.name }}{% endblock %}
 
@@ -12,10 +13,85 @@
     <p>Requests are reviewed by managers before any approved term is passed to interpreter/content review. Visitors need to leave an email address so the organisation can follow up when the request is reviewed.</p>
   {% endif %}
 
-  <form method="post" class="form-card">
+  <form
+    id="vue-sign-request-form"
+    method="post"
+    class="form-card"
+    novalidate>
     {% csrf_token %}
-    {{ form.as_p }}
+    {% if form.non_field_errors %}
+      <div class="form-errors" role="alert">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
+    {% if form.requester_name %}
+      <p>
+        <label for="{{ form.requester_name.id_for_label }}">{{ form.requester_name.label }}</label>
+        {{ form.requester_name }}
+        <span id="requester-name-error" class="field-error" v-if="errors.requester_name" v-cloak>
+          [[ errors.requester_name ]]
+        </span>
+        {% for error in form.requester_name.errors %}
+          <span class="field-error" role="alert">{{ error }}</span>
+        {% endfor %}
+      </p>
+    {% endif %}
+
+    {% if form.requester_email %}
+      <p>
+        <label for="{{ form.requester_email.id_for_label }}">{{ form.requester_email.label }}</label>
+        {{ form.requester_email }}
+        <span id="requester-email-error" class="field-error" v-if="errors.requester_email" v-cloak>
+          [[ errors.requester_email ]]
+        </span>
+        {% for error in form.requester_email.errors %}
+          <span class="field-error" role="alert">{{ error }}</span>
+        {% endfor %}
+      </p>
+    {% endif %}
+
+    <p>
+      <label for="{{ form.term.id_for_label }}">{{ form.term.label }}</label>
+      {{ form.term }}
+      <span id="term-error" class="field-error" v-if="errors.term" v-cloak>
+        [[ errors.term ]]
+      </span>
+      {% for error in form.term.errors %}
+        <span class="field-error" role="alert">{{ error }}</span>
+      {% endfor %}
+    </p>
+
+    <p>
+      <label for="{{ form.suggested_category.id_for_label }}">{{ form.suggested_category.label }}</label>
+      {{ form.suggested_category }}
+      {% if form.suggested_category.help_text %}
+        <span class="helptext">{{ form.suggested_category.help_text }}</span>
+      {% endif %}
+      {% for error in form.suggested_category.errors %}
+        <span class="field-error" role="alert">{{ error }}</span>
+      {% endfor %}
+    </p>
+
+    <p>
+      <label for="{{ form.context.id_for_label }}">{{ form.context.label }}</label>
+      {{ form.context }}
+      <span class="helptext">Explain where staff need this sign, for example at reception, in class, or during customer service.</span>
+      <span id="context-error" class="field-error" v-if="errors.context" v-cloak>
+        [[ errors.context ]]
+      </span>
+      {% for error in form.context.errors %}
+        <span class="field-error" role="alert">{{ error }}</span>
+      {% endfor %}
+    </p>
+
     <button class="button" type="submit">Submit request</button>
   </form>
 </section>
+{% endblock %}
+
+{% block scripts %}
+  {{ block.super }}
+  <script src="{% static 'glossary/vue.global.prod.js' %}"></script>
+  <script src="{% static 'glossary/vue-request-form.js' %}"></script>
 {% endblock %}

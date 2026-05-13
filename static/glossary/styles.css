@@ -913,6 +913,26 @@ textarea {
   font-size: .9rem;
 }
 
+.field-error,
+.form-errors {
+  color: #9f1239;
+  display: block;
+  font-weight: 800;
+  margin-top: .35rem;
+}
+
+.form-errors {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  padding: .75rem;
+}
+
+[aria-invalid="true"] {
+  border-color: #be123c;
+}
+
 .table-wrap {
   overflow-x: auto;
 }

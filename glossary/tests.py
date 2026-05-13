@@ -436,6 +436,8 @@ class GlossaryWorkflowTests(TestCase):
         self.client.login(username="staff", password="pass12345")
         response = self.client.get(reverse("request_sign", args=[self.org.slug]))
         self.assertContains(response, "linked to your College staff profile")
+        self.assertContains(response, 'id="vue-sign-request-form"')
+        self.assertContains(response, "vue-request-form.js")
         self.assertNotContains(response, 'name="requester_name"')
         self.assertNotContains(response, 'name="requester_email"')
 
@@ -458,8 +460,15 @@ class GlossaryWorkflowTests(TestCase):
 
     def test_visitor_request_form_requires_contact_details(self):
         response = self.client.get(reverse("request_sign", args=[self.org.slug]))
+        self.assertContains(response, 'id="vue-sign-request-form"')
+        self.assertContains(response, "novalidate")
+        self.assertContains(response, "vue-request-form.js")
         self.assertContains(response, 'name="requester_name"')
         self.assertContains(response, 'name="requester_email"')
+        self.assertContains(response, 'id="requester-name-error"')
+        self.assertContains(response, 'id="requester-email-error"')
+        self.assertContains(response, 'id="term-error"')
+        self.assertContains(response, 'id="context-error"')
 
     def test_manager_can_approve_request_for_interpreter_review(self):
         sign_request = SignRequest.objects.create(
