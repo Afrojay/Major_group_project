@@ -4,7 +4,7 @@ from django.contrib.auth.views import LoginView
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count
 from django.db.models import Q
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -70,6 +70,30 @@ def _search_signs(organisation, query, category_slug="", letter=""):
         | Q(tags__icontains=query)
         | Q(category__name__icontains=query)
     )
+
+
+def _serialise_sign(sign, favourite_ids=None):
+    favourite_ids = favourite_ids or set()
+    tags = [tag.strip() for tag in sign.tags.split(",") if tag.strip()]
+    return {
+        "id": sign.id,
+        "term": sign.term,
+        "slug": sign.slug,
+        "category": {
+            "id": sign.category_id,
+            "name": sign.category.name,
+            "slug": sign.category.slug,
+        },
+        "description": sign.description,
+        "usage_context": sign.usage_context,
+        "tags": tags,
+        "video_url": sign.video_url,
+        "thumbnail_url": sign.thumbnail_url,
+        "is_quick_reference": sign.is_quick_reference,
+        "is_official_published": sign.is_official_published,
+        "is_favourite": sign.id in favourite_ids,
+        "detail_url": sign.get_absolute_url(),
+    }
 
 
 def _portal_cards_for(organisation, profile):
@@ -302,6 +326,43 @@ def organisation_home(request, organisation_slug):
             "staff_profile": profile,
             "favourite_ids": favourite_ids,
         },
+    )
+
+
+def organisation_signs_api(request, organisation_slug):
+    organisation = get_object_or_404(Organisation, slug=organisation_slug)
+    query = request.GET.get("q", "").strip()
+    selected_category_slug = request.GET.get("category", "").strip()
+    selected_letter = request.GET.get("letter", "").strip().upper()[:1]
+    if selected_letter not in ALPHABET:
+        selected_letter = ""
+    if selected_category_slug:
+        get_object_or_404(Category, organisation=organisation, slug=selected_category_slug)
+    signs = _search_signs(
+        organisation,
+        query,
+        selected_category_slug,
+        selected_letter,
+    ).select_related("category")
+    profile = _staff_profile_for(request.user, organisation)
+    favourite_ids = set()
+    if profile:
+        favourite_ids = set(profile.favourites.values_list("sign_id", flat=True))
+    return JsonResponse(
+        {
+            "organisation": {
+                "id": organisation.id,
+                "name": organisation.name,
+                "slug": organisation.slug,
+            },
+            "filters": {
+                "q": query,
+                "category": selected_category_slug,
+                "letter": selected_letter,
+            },
+            "count": signs.count(),
+            "results": [_serialise_sign(sign, favourite_ids) for sign in signs],
+        }
     )
 
 

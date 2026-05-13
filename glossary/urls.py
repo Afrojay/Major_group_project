@@ -7,6 +7,11 @@ urlpatterns = [
     path("dashboard/", views.dashboard_redirect, name="dashboard_redirect"),
     path("org/<slug:organisation_slug>/", views.organisation_home, name="organisation_home"),
     path(
+        "org/<slug:organisation_slug>/api/signs/",
+        views.organisation_signs_api,
+        name="organisation_signs_api",
+    ),
+    path(
         "org/<slug:organisation_slug>/category/<slug:category_slug>/",
         views.category_detail,
         name="category_detail",

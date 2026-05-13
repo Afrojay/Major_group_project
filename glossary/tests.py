@@ -71,6 +71,46 @@ class GlossaryWorkflowTests(TestCase):
         self.assertContains(response, "Login")
         self.assertNotContains(response, "Hidden")
 
+    def test_signs_api_returns_filtered_organisation_results_for_vue(self):
+        SignEntry.objects.create(
+            organisation=self.org,
+            category=self.category,
+            term="Password reset",
+            slug="password-reset",
+            video_url="https://example.com/password-reset",
+            tags="account, support",
+        )
+        response = self.client.get(
+            reverse("organisation_signs_api", args=[self.org.slug]),
+            {"q": "password", "category": self.category.slug, "letter": "P"},
+        )
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["organisation"]["slug"], self.org.slug)
+        self.assertEqual(payload["filters"]["q"], "password")
+        self.assertEqual(payload["filters"]["category"], self.category.slug)
+        self.assertEqual(payload["filters"]["letter"], "P")
+        self.assertEqual(payload["count"], 1)
+        self.assertEqual(payload["results"][0]["term"], "Password reset")
+        self.assertEqual(payload["results"][0]["category"]["name"], "Support")
+        self.assertEqual(payload["results"][0]["tags"], ["account", "support"])
+        self.assertNotContains(response, "Refund")
+
+    def test_signs_api_marks_staff_favourites_for_vue(self):
+        FavouriteSign.objects.create(staff_profile=self.profile, sign=self.sign)
+        self.client.login(username="staff", password="pass12345")
+        response = self.client.get(reverse("organisation_signs_api", args=[self.org.slug]))
+        payload = response.json()
+        login_result = next(item for item in payload["results"] if item["term"] == "Login")
+        self.assertTrue(login_result["is_favourite"])
+
+    def test_signs_api_rejects_cross_organisation_category_filter(self):
+        response = self.client.get(
+            reverse("organisation_signs_api", args=[self.org.slug]),
+            {"category": self.other_category.slug},
+        )
+        self.assertEqual(response.status_code, 404)
+
     def test_nav_uses_accessible_collapsible_menu(self):
         response = self.client.get(reverse("organisation_list"))
         self.assertContains(response, '<details class="nav-menu">')
