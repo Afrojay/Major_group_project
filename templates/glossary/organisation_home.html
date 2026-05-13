@@ -47,9 +47,10 @@
   {% endif %}
   <div class="actions">
     {% if staff_profile %}
-      <a class="button" href="{% url 'staff_dashboard' organisation.slug %}">My dashboard</a>
       {% if staff_profile.can_review_requests %}
-        <a class="button secondary" href="{% url 'manager_dashboard' organisation.slug %}">Manager dashboard</a>
+        <a class="button" href="{% url 'manager_dashboard' organisation.slug %}">Manager dashboard</a>
+      {% else %}
+        <a class="button" href="{% url 'staff_dashboard' organisation.slug %}">My dashboard</a>
       {% endif %}
       <a class="button secondary" href="{% url 'request_sign' organisation.slug %}">Request a sign</a>
     {% else %}

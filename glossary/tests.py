@@ -187,6 +187,12 @@ class GlossaryWorkflowTests(TestCase):
         self.assertContains(response, "Assign tasks")
         self.assertNotContains(response, "My tasks")
 
+    def test_manager_organisation_home_does_not_duplicate_dashboard_actions(self):
+        self.client.login(username="manager", password="pass12345")
+        response = self.client.get(reverse("organisation_home", args=[self.org.slug]))
+        self.assertContains(response, "Manager dashboard")
+        self.assertEqual(response.content.count(b">My dashboard</a>"), 1)
+
     def test_staff_dashboard_uses_organisation_theme_and_role_label(self):
         self.org.theme_colour = "#123abc"
         self.org.save()
