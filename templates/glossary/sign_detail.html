@@ -37,7 +37,9 @@
       <p class="muted">Language: [[ sign.transcript.language ]]</p>
     </section>
 
-    <p v-if="sign.tags.length" class="tags">[[ sign.tags.join(', ') ]]</p>
+    <nav v-if="sign.tag_links.length" class="tag-links" aria-label="Related glossary tags">
+      <a v-for="tag in sign.tag_links" :key="tag.label" :href="tag.url">[[ tag.label ]]</a>
+    </nav>
 
     <p v-if="statusMessage" class="message" aria-live="polite">[[ statusMessage ]]</p>
 
@@ -103,8 +105,12 @@
       </section>
     {% endif %}
 
-    {% if sign.tags %}
-      <p class="tags">{{ sign.tags }}</p>
+    {% if sign_tag_links %}
+      <nav class="tag-links" aria-label="Related glossary tags">
+        {% for tag in sign_tag_links %}
+          <a href="{{ tag.url }}">{{ tag.label }}</a>
+        {% endfor %}
+      </nav>
     {% endif %}
 
     {% if staff_profile %}

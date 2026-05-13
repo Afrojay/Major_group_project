@@ -96,6 +96,10 @@ class GlossaryWorkflowTests(TestCase):
         self.assertEqual(payload["results"][0]["term"], "Password reset")
         self.assertEqual(payload["results"][0]["category"]["name"], "Support")
         self.assertEqual(payload["results"][0]["tags"], ["account", "support"])
+        self.assertEqual(
+            payload["results"][0]["tag_links"][1]["url"],
+            reverse("category_detail", args=[self.org.slug, self.category.slug]),
+        )
         self.assertNotContains(response, "Refund")
 
     def test_signs_api_marks_staff_favourites_for_vue(self):
@@ -282,6 +286,7 @@ class GlossaryWorkflowTests(TestCase):
 
     def test_sign_detail_renders_optional_transcript_and_thumbnail(self):
         self.sign.thumbnail_url = "https://example.com/login-thumb.jpg"
+        self.sign.tags = "login, support, College"
         self.sign.save()
         Transcript.objects.create(sign=self.sign, text="Transcript text for the login sign.")
         response = self.client.get(reverse("sign_detail", args=[self.org.slug, self.sign.slug]))
@@ -291,6 +296,9 @@ class GlossaryWorkflowTests(TestCase):
         self.assertContains(response, 'id="vue-sign-detail"')
         self.assertContains(response, 'id="sign-detail-data"')
         self.assertContains(response, "vue-sign-detail.js")
+        self.assertContains(response, 'aria-label="Related glossary tags"')
+        self.assertContains(response, reverse("category_detail", args=[self.org.slug, self.category.slug]))
+        self.assertContains(response, f"{self.org.get_absolute_url()}?q=login")
 
     def test_retail_dashboard_shows_retail_role_widgets(self):
         retail_user = User.objects.create_user(username="retail", password="pass12345")

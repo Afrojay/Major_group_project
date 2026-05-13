@@ -8,6 +8,7 @@ from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.http import urlencode
 from django.views.decorators.http import require_POST
 
 from .forms import AssignedTaskForm, PortalItemForm, SignRequestForm, SignRequestReviewForm
@@ -87,6 +88,7 @@ def _serialise_sign(sign, favourite_ids=None):
         "description": sign.description,
         "usage_context": sign.usage_context,
         "tags": tags,
+        "tag_links": _tag_links_for_sign(sign, tags),
         "video_url": sign.video_url,
         "thumbnail_url": sign.thumbnail_url,
         "is_quick_reference": sign.is_quick_reference,
@@ -101,6 +103,25 @@ def _serialise_sign(sign, favourite_ids=None):
             },
         ),
     }
+
+
+def _tag_links_for_sign(sign, tags=None):
+    tags = tags if tags is not None else [tag.strip() for tag in sign.tags.split(",") if tag.strip()]
+    organisation_url = sign.organisation.get_absolute_url()
+    category_url = sign.category.get_absolute_url()
+    category_name = sign.category.name.lower()
+    organisation_name = sign.organisation.name.lower()
+    tag_links = []
+    for tag in tags:
+        normalised_tag = tag.lower()
+        if normalised_tag == category_name:
+            url = category_url
+        elif normalised_tag == organisation_name:
+            url = organisation_url
+        else:
+            url = f"{organisation_url}?{urlencode({'q': tag})}"
+        tag_links.append({"label": tag, "url": url})
+    return tag_links
 
 
 def _serialise_sign_detail(sign, transcript=None, is_favourite=False, can_favourite=False):
@@ -439,6 +460,7 @@ def sign_detail(request, organisation_slug, sign_slug):
                 is_favourite=is_favourite,
                 can_favourite=profile is not None,
             ),
+            "sign_tag_links": _tag_links_for_sign(sign),
         },
     )
 

@@ -924,6 +924,30 @@ textarea {
   padding: .3rem .65rem;
 }
 
+.tag-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin: 1.25rem 0;
+}
+
+.tag-links a {
+  background: #e7f0ea;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: #17201c;
+  display: inline-block;
+  font-weight: 800;
+  padding: .4rem .75rem;
+  text-decoration: none;
+}
+
+.tag-links a:hover,
+.tag-links a:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
 .message {
   align-items: center;
   background: #e7f0ea;
