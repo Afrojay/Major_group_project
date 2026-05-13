@@ -21,6 +21,7 @@
       return {
         sign: JSON.parse(dataEl.textContent),
         statusMessage: "",
+        statusTimer: null,
       };
     },
     computed: {
@@ -49,9 +50,17 @@
           .then((payload) => {
             this.sign.is_favourite = payload.is_favourite;
             this.statusMessage = payload.message;
+            window.clearTimeout(this.statusTimer);
+            this.statusTimer = window.setTimeout(() => {
+              this.statusMessage = "";
+            }, 3500);
           })
           .catch(() => {
             this.statusMessage = "The favourite could not be updated. Try the standard button below.";
+            window.clearTimeout(this.statusTimer);
+            this.statusTimer = window.setTimeout(() => {
+              this.statusMessage = "";
+            }, 3500);
           });
       },
     },
