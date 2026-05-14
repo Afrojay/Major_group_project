@@ -53,3 +53,70 @@ Open `http://127.0.0.1:8000/`.
 ```
 
 Demo accounts created by `load_sample_data` use the password `prototype123`. Each sample organisation has a staff account, such as `college_staff`, a manager account, such as `college_manager`, and a glossary manager account, such as `college_glossary`.
+
+## Render deployment
+
+The project can be deployed on Render using a Python Web Service and a Render PostgreSQL database. SQLite is only intended for local development. A deployed version should use PostgreSQL so the organisations, signs, users, favourites and requests persist after deployment.
+
+### Render services used
+
+- Web Service: Django application
+- PostgreSQL: persistent production-style database
+- Branch: `updated-functionality`
+
+### Build and start commands
+
+Use these Render settings for the web service:
+
+```bash
+Build Command: bash build.sh
+Start Command: gunicorn isl_glossary_platform.wsgi:application
+```
+
+The `build.sh` script installs dependencies, collects static files, applies migrations and loads the demo data:
+
+```bash
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+python manage.py collectstatic --no-input
+python manage.py migrate
+python manage.py load_sample_data
+```
+
+### Environment variables
+
+Add these environment variables to the Render **Web Service**, not the PostgreSQL database page:
+
+```txt
+DATABASE_URL=<Render PostgreSQL Internal Database URL>
+SECRET_KEY=<long random secret key>
+DEBUG=False
+ALLOWED_HOSTS=<your-render-domain.onrender.com>
+CSRF_TRUSTED_ORIGINS=https://<your-render-domain.onrender.com>
+```
+
+Example for the current deployment:
+
+```txt
+ALLOWED_HOSTS=major-group-project-txed.onrender.com
+CSRF_TRUSTED_ORIGINS=https://major-group-project-txed.onrender.com
+```
+
+If the deployed site shows `Bad Request (400)`, check that `ALLOWED_HOSTS` exactly matches the Render domain without `https://`. `CSRF_TRUSTED_ORIGINS` should include the full `https://` URL.
+
+### Loading data on Render
+
+The sample organisations and demo accounts are created by:
+
+```bash
+python manage.py load_sample_data
+```
+
+This command is included in `build.sh`, so the deployed site should show the sample organisations after deployment. If the homepage says `No organisations have been added yet`, run the command manually in a Render shell or redeploy after confirming the build script ran successfully.
+
+### Deployment notes
+
+- `DATABASE_URL` should use the Render PostgreSQL **Internal Database URL**.
+- `DEBUG` should be `False` for deployment.
+- The free Render instance may spin down after inactivity and take time to wake up.
+- Video content is externally embedded or marked as needing review. The project does not claim ownership of external ISL videos.
