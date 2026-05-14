@@ -20,24 +20,29 @@
           {% if user.is_authenticated %}
             {% if current_staff_profile and current_staff_organisation %}
               <a href="{% url 'dashboard_redirect' %}">My dashboard</a>
-              {% if current_staff_profile.can_review_requests %}
+              {% if current_staff_profile.can_triage_requests %}
                 <a href="{% url 'manager_dashboard' current_staff_organisation.slug %}">Manager dashboard</a>
+              {% elif current_staff_profile.can_review_glossary_content %}
+                <a href="{% url 'glossary_editor_dashboard' current_staff_organisation.slug %}">Glossary editor dashboard</a>
               {% else %}
                 <a href="{% url 'staff_dashboard' current_staff_organisation.slug %}">Staff dashboard</a>
               {% endif %}
               <a href="{{ current_staff_organisation.get_absolute_url }}">Organisation glossary</a>
-              {% if not current_staff_profile.can_review_requests %}
+              {% if not current_staff_profile.can_triage_requests and not current_staff_profile.can_review_glossary_content %}
                 <a href="{% url 'task_board' current_staff_organisation.slug %}">My tasks</a>
                 <a href="{% url 'staff_dashboard' current_staff_organisation.slug %}#favourite-signs">Saved signs</a>
                 <a href="{% url 'staff_dashboard' current_staff_organisation.slug %}#sign-requests">My requests</a>
               {% endif %}
-              {% if current_staff_profile.can_review_requests %}
+              {% if current_staff_profile.can_triage_requests %}
                 <a href="{% url 'manager_dashboard' current_staff_organisation.slug %}#review-requests">Review requests</a>
                 <a href="{% url 'manager_dashboard' current_staff_organisation.slug %}#assign-tasks">Assign tasks</a>
               {% endif %}
+              {% if current_staff_profile.can_review_glossary_content %}
+                <a href="{% url 'glossary_editor_dashboard' current_staff_organisation.slug %}#content-queue">Content queue</a>
+              {% endif %}
               <a href="{% url 'request_sign' current_staff_organisation.slug %}">Request a sign</a>
-              {% if user.is_staff %}
-                <a href="/admin/">Back-office admin</a>
+              {% if user.is_superuser %}
+                <a href="/admin/">Platform admin</a>
               {% endif %}
             {% else %}
               <a href="{% url 'dashboard_redirect' %}">My dashboard</a>

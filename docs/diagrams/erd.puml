@@ -10,7 +10,8 @@ entity "auth.User" as User {
   --
   username : string
   email : email
-  is_staff : boolean
+  is_staff : boolean (Django admin access flag)
+  is_superuser : boolean
 }
 
 entity Organisation {
@@ -47,6 +48,18 @@ entity SignEntry {
   tags : string
   is_quick_reference : boolean
   is_official_published : boolean
+  publication_status : draft | needs_video | needs_review | published | archived
+  video_review_status : unchecked | candidate_video | approved_for_prototype | broken_link | needs_replacement
+}
+
+entity SignEntryChangeLog {
+  * id : integer
+  --
+  sign_id : FK
+  edited_by_id : optional FK
+  changed_fields : string
+  change_summary : text
+  created_at : datetime
 }
 
 entity Transcript {
@@ -92,11 +105,15 @@ entity SignRequest {
   requester_email : email
   term : string
   context : text
+  request_type : request type
   suggested_category_id : optional FK
   status : request status
   admin_notes : text
   approval_notes : text
-  interpreter_notes : text
+  decision_reason : text
+  glossary_review_notes : text
+  reviewed_by_id : optional FK
+  reviewed_at : datetime
 }
 
 entity PortalItem {
@@ -126,12 +143,15 @@ Category |o--o{ SignRequest : optional suggestion
 SignEntry ||--o| Transcript
 SignEntry ||--o{ FavouriteSign
 SignEntry |o--o{ FAQEntry : optional related sign
+SignEntry ||--o{ SignEntryChangeLog
 
 User ||--o| StaffProfile
 StaffProfile ||--o{ FavouriteSign
 StaffProfile |o--o{ SignRequest : staff requester
+StaffProfile |o--o{ SignRequest : reviewed by
 StaffProfile |o--o{ PortalItem : created by
 StaffProfile |o--o{ PortalItem : assigned to
+StaffProfile |o--o{ SignEntryChangeLog : edited by
 
 note bottom of SignEntry
 Unique per organisation:

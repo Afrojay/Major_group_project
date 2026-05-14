@@ -83,6 +83,20 @@ class Category(TimeStampedModel):
 
 
 class SignEntry(TimeStampedModel):
+    class PublicationStatus(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        NEEDS_VIDEO = "needs_video", "Needs video"
+        NEEDS_REVIEW = "needs_review", "Needs review"
+        PUBLISHED = "published", "Published"
+        ARCHIVED = "archived", "Archived"
+
+    class VideoReviewStatus(models.TextChoices):
+        UNCHECKED = "unchecked", "Unchecked"
+        CANDIDATE_VIDEO = "candidate_video", "Candidate video"
+        APPROVED_FOR_PROTOTYPE = "approved_for_prototype", "Approved for prototype"
+        BROKEN_LINK = "broken_link", "Broken link"
+        NEEDS_REPLACEMENT = "needs_replacement", "Needs replacement"
+
     organisation = models.ForeignKey(
         Organisation,
         related_name="signs",
@@ -101,9 +115,21 @@ class SignEntry(TimeStampedModel):
     usage_context = models.TextField(blank=True)
     tags = models.CharField(max_length=300, blank=True)
     is_quick_reference = models.BooleanField(default=False)
+    publication_status = models.CharField(
+        max_length=30,
+        choices=PublicationStatus.choices,
+        default=PublicationStatus.PUBLISHED,
+        help_text="Workflow status controlling whether this sign appears in public/staff glossary views.",
+    )
+    video_review_status = models.CharField(
+        max_length=30,
+        choices=VideoReviewStatus.choices,
+        default=VideoReviewStatus.UNCHECKED,
+        help_text="Simple review status for the linked sign video.",
+    )
     is_official_published = models.BooleanField(
         default=True,
-        help_text="Whether this sign has been reviewed and approved by interpreters."
+        help_text="Whether this sign is approved for publication in this organisation glossary."
     )
     
     class Meta:
@@ -133,6 +159,33 @@ class SignEntry(TimeStampedModel):
                 "sign_slug": self.slug,
             },
         )
+
+    @property
+    def is_publicly_visible(self):
+        return self.publication_status == self.PublicationStatus.PUBLISHED
+
+
+class SignEntryChangeLog(TimeStampedModel):
+    sign = models.ForeignKey(
+        SignEntry,
+        related_name="change_logs",
+        on_delete=models.CASCADE,
+    )
+    edited_by = models.ForeignKey(
+        "StaffProfile",
+        related_name="sign_change_logs",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+    changed_fields = models.CharField(max_length=300)
+    change_summary = models.TextField()
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.sign.term} edited on {self.created_at:%Y-%m-%d %H:%M}"
 
 
 class Transcript(TimeStampedModel):
@@ -204,8 +257,8 @@ class FAQEntry(TimeStampedModel):
 class StaffProfile(TimeStampedModel):
     class RoleType(models.TextChoices):
         STAFF = "staff", "Staff"
-        MANAGER = "manager", "Manager"
-        GLOSSARY_MANAGER = "glossary_manager", "Glossary manager"
+        MANAGER = "manager", "Organisation manager"
+        GLOSSARY_MANAGER = "glossary_manager", "Glossary editor"
 
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -231,15 +284,20 @@ class StaffProfile(TimeStampedModel):
         return f"{self.user.get_username()} - {self.organisation.name}"
 
     @property
+    def can_triage_requests(self):
+        return self.role_type == self.RoleType.MANAGER
+
+    @property
+    def can_review_glossary_content(self):
+        return self.role_type == self.RoleType.GLOSSARY_MANAGER
+
+    @property
     def can_review_requests(self):
-        return self.role_type in {
-            self.RoleType.MANAGER,
-            self.RoleType.GLOSSARY_MANAGER,
-        }
+        return self.can_triage_requests
 
     @property
     def can_prepare_glossary_content(self):
-        return self.role_type == self.RoleType.GLOSSARY_MANAGER
+        return self.can_review_glossary_content
 
 
 class FavouriteSign(TimeStampedModel):
@@ -275,11 +333,20 @@ class FavouriteSign(TimeStampedModel):
 
 
 class SignRequest(TimeStampedModel):
+    class RequestType(models.TextChoices):
+        MISSING_SIGN = "missing_sign", "Missing sign"
+        INCORRECT_SIGN = "incorrect_sign", "Incorrect sign/video"
+        UNCLEAR_DESCRIPTION = "unclear_description", "Unclear description"
+        WRONG_CATEGORY = "wrong_category", "Wrong category"
+        POSSIBLE_DUPLICATE = "possible_duplicate", "Possible duplicate"
+        BROKEN_VIDEO_LINK = "broken_video_link", "Broken video link"
+        OTHER = "other", "Other"
+
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending manager review"
+        PENDING = "pending", "Pending organisation-manager review"
         NEEDS_CLARIFICATION = "needs_clarification", "Needs clarification"
-        MANAGER_APPROVED = "manager_approved", "Manager approved"
-        SENT_TO_INTERPRETER = "sent_to_interpreter", "Sent to interpreter"
+        MANAGER_APPROVED = "manager_approved", "Ready for glossary review"
+        SENT_TO_INTERPRETER = "sent_to_interpreter", "In glossary review"
         COMPLETED = "completed", "Completed"
         REJECTED = "rejected", "Rejected"
 
@@ -299,12 +366,25 @@ class SignRequest(TimeStampedModel):
     requester_email = models.EmailField(blank=True)
     term = models.CharField(max_length=200)
     context = models.TextField(help_text="Where or why this sign is needed.")
+    request_type = models.CharField(
+        max_length=30,
+        choices=RequestType.choices,
+        default=RequestType.MISSING_SIGN,
+    )
     suggested_category = models.ForeignKey(
         Category,
         related_name="sign_requests",
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
+    )
+    related_sign = models.ForeignKey(
+        SignEntry,
+        related_name="reports",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        help_text="Existing sign being reported, if this request is about a current glossary entry.",
     )
     status = models.CharField(
         max_length=30,
@@ -316,10 +396,23 @@ class SignRequest(TimeStampedModel):
         blank=True,
         help_text="Manager feedback on the sign request."
     )
-    interpreter_notes = models.TextField(
+    decision_reason = models.TextField(
         blank=True,
-        help_text="Notes from interpreter/content review team."
+        help_text="Reason for the organisation manager or glossary editor decision.",
     )
+    interpreter_notes = models.TextField(
+        "Glossary review notes",
+        blank=True,
+        help_text="Notes from glossary editor or ISL/content review."
+    )
+    reviewed_by = models.ForeignKey(
+        StaffProfile,
+        related_name="reviewed_sign_requests",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
         ordering = ["-created_at"]
@@ -342,6 +435,12 @@ class SignRequest(TimeStampedModel):
         if self.suggested_category_id and self.organisation_id:
             if self.suggested_category.organisation_id != self.organisation_id:
                 errors["suggested_category"] = "The suggested category must belong to the same organisation."
+        if self.related_sign_id and self.organisation_id:
+            if self.related_sign.organisation_id != self.organisation_id:
+                errors["related_sign"] = "The reported sign must belong to the same organisation."
+        if self.reviewed_by_id and self.organisation_id:
+            if self.reviewed_by.organisation_id != self.organisation_id:
+                errors["reviewed_by"] = "The reviewer must belong to the same organisation."
         if errors:
             raise ValidationError(errors)
 

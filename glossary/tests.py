@@ -5,7 +5,17 @@ from django.urls import reverse
 
 from glossary.management.commands.load_sample_data import description_for
 
-from .models import Category, FavouriteSign, Organisation, PortalItem, SignEntry, SignRequest, StaffProfile, Transcript
+from .models import (
+    Category,
+    FavouriteSign,
+    Organisation,
+    PortalItem,
+    SignEntry,
+    SignEntryChangeLog,
+    SignRequest,
+    StaffProfile,
+    Transcript,
+)
 
 
 class GlossaryWorkflowTests(TestCase):
@@ -45,6 +55,20 @@ class GlossaryWorkflowTests(TestCase):
             user=self.manager_user,
             organisation=self.org,
             role_type=StaffProfile.RoleType.MANAGER,
+        )
+        self.glossary_user = User.objects.create_user(
+            username="glossary",
+            password="pass12345",
+        )
+        self.glossary_profile = StaffProfile.objects.create(
+            user=self.glossary_user,
+            organisation=self.org,
+            role_type=StaffProfile.RoleType.GLOSSARY_MANAGER,
+        )
+        self.platform_admin = User.objects.create_superuser(
+            username="platform",
+            email="platform@example.com",
+            password="pass12345",
         )
 
     def test_search_is_scoped_to_organisation(self):
@@ -194,6 +218,15 @@ class GlossaryWorkflowTests(TestCase):
         response = self.client.get(response.url)
         self.assertRedirects(response, reverse("manager_dashboard", args=[self.org.slug]))
 
+    def test_login_form_redirects_glossary_editor_to_editor_dashboard(self):
+        response = self.client.post(
+            reverse("login"),
+            {"username": "glossary", "password": "pass12345"},
+        )
+        self.assertRedirects(response, reverse("dashboard_redirect"), fetch_redirect_response=False)
+        response = self.client.get(response.url)
+        self.assertRedirects(response, reverse("glossary_editor_dashboard", args=[self.org.slug]))
+
     def test_staff_menu_contains_staff_shortcuts(self):
         self.client.login(username="staff", password="pass12345")
         response = self.client.get(reverse("staff_dashboard", args=[self.org.slug]))
@@ -210,6 +243,14 @@ class GlossaryWorkflowTests(TestCase):
         self.assertContains(response, "Review requests")
         self.assertContains(response, "Assign tasks")
         self.assertNotContains(response, "My tasks")
+        self.assertNotContains(response, "Content queue")
+
+    def test_glossary_editor_menu_contains_content_shortcuts(self):
+        self.client.login(username="glossary", password="pass12345")
+        response = self.client.get(reverse("glossary_editor_dashboard", args=[self.org.slug]))
+        self.assertContains(response, "Glossary editor dashboard")
+        self.assertContains(response, "Content queue")
+        self.assertNotContains(response, "Assign tasks")
 
     def test_manager_organisation_home_does_not_duplicate_dashboard_actions(self):
         self.client.login(username="manager", password="pass12345")
@@ -276,6 +317,47 @@ class GlossaryWorkflowTests(TestCase):
         self.assertContains(response, "Welcome to College")
         self.assertContains(response, "Hi manager")
 
+    def test_manager_dashboard_shows_review_workflow_counts(self):
+        review_sign = SignEntry.objects.create(
+            organisation=self.org,
+            category=self.category,
+            term="Needs review",
+            slug="needs-review",
+            video_url="https://example.com/review",
+            publication_status=SignEntry.PublicationStatus.NEEDS_REVIEW,
+        )
+        SignEntry.objects.create(
+            organisation=self.org,
+            category=self.category,
+            term="Needs video",
+            slug="needs-video",
+            video_url="https://example.com/video",
+            publication_status=SignEntry.PublicationStatus.NEEDS_VIDEO,
+            video_review_status=SignEntry.VideoReviewStatus.NEEDS_REPLACEMENT,
+        )
+        SignEntry.objects.create(
+            organisation=self.other_org,
+            category=self.other_category,
+            term="Other org draft",
+            slug="other-org-draft",
+            video_url="https://example.com/other-draft",
+            publication_status=SignEntry.PublicationStatus.NEEDS_REVIEW,
+        )
+        self.client.login(username="manager", password="pass12345")
+        response = self.client.get(reverse("manager_dashboard", args=[self.org.slug]))
+        self.assertContains(response, "Pending requests")
+        self.assertNotContains(response, "Signs needing review")
+        self.assertNotContains(response, review_sign.term)
+        self.assertNotContains(response, "Other org draft")
+
+        self.client.logout()
+        self.client.login(username="glossary", password="pass12345")
+        response = self.client.get(reverse("glossary_editor_dashboard", args=[self.org.slug]))
+        self.assertContains(response, "Signs needing review")
+        self.assertContains(response, "Signs needing video")
+        self.assertContains(response, review_sign.term)
+        self.assertNotContains(response, "Other org draft")
+
     def test_sign_and_request_pages_use_organisation_theme(self):
         self.org.theme_colour = "#123abc"
         self.org.save()
@@ -299,6 +381,84 @@ class GlossaryWorkflowTests(TestCase):
         self.assertContains(response, 'aria-label="Related glossary tags"')
         self.assertContains(response, reverse("category_detail", args=[self.org.slug, self.category.slug]))
         self.assertContains(response, f"{self.org.get_absolute_url()}?q=login")
+
+    def test_unpublished_signs_are_hidden_from_public_and_staff_views(self):
+        draft_sign = SignEntry.objects.create(
+            organisation=self.org,
+            category=self.category,
+            term="Draft only",
+            slug="draft-only",
+            video_url="https://example.com/draft",
+            publication_status=SignEntry.PublicationStatus.DRAFT,
+        )
+        response = self.client.get(reverse("organisation_home", args=[self.org.slug]))
+        self.assertNotContains(response, draft_sign.term)
+        response = self.client.get(reverse("organisation_signs_api", args=[self.org.slug]))
+        self.assertNotIn(draft_sign.term, [item["term"] for item in response.json()["results"]])
+        response = self.client.get(reverse("sign_detail", args=[self.org.slug, draft_sign.slug]))
+        self.assertEqual(response.status_code, 404)
+
+        self.client.login(username="staff", password="pass12345")
+        FavouriteSign.objects.create(staff_profile=self.profile, sign=draft_sign)
+        response = self.client.get(reverse("organisation_home", args=[self.org.slug]))
+        self.assertNotContains(response, draft_sign.term)
+        response = self.client.get(reverse("sign_detail", args=[self.org.slug, draft_sign.slug]))
+        self.assertEqual(response.status_code, 404)
+        response = self.client.get(reverse("staff_dashboard", args=[self.org.slug]))
+        self.assertNotContains(response, draft_sign.term)
+
+    def test_manager_can_view_but_not_manage_own_organisation_review_needed_signs(self):
+        draft_sign = SignEntry.objects.create(
+            organisation=self.org,
+            category=self.category,
+            term="Manager visible draft",
+            slug="manager-visible-draft",
+            video_url="https://example.com/draft",
+            publication_status=SignEntry.PublicationStatus.NEEDS_REVIEW,
+        )
+        SignEntry.objects.create(
+            organisation=self.other_org,
+            category=self.other_category,
+            term="Other manager draft",
+            slug="other-manager-draft",
+            video_url="https://example.com/other-draft",
+            publication_status=SignEntry.PublicationStatus.NEEDS_REVIEW,
+        )
+        self.client.login(username="manager", password="pass12345")
+        response = self.client.get(reverse("organisation_home", args=[self.org.slug]))
+        self.assertContains(response, draft_sign.term)
+        response = self.client.get(reverse("sign_detail", args=[self.org.slug, draft_sign.slug]))
+        self.assertContains(response, draft_sign.term)
+        response = self.client.get(reverse("manager_dashboard", args=[self.org.slug]))
+        self.assertNotContains(response, draft_sign.term)
+        self.assertNotContains(response, "Other manager draft")
+
+    def test_glossary_editor_can_see_own_organisation_review_needed_signs_only(self):
+        own_draft = SignEntry.objects.create(
+            organisation=self.org,
+            category=self.category,
+            term="Editor visible draft",
+            slug="editor-visible-draft",
+            video_url="https://example.com/draft",
+            publication_status=SignEntry.PublicationStatus.NEEDS_REVIEW,
+        )
+        other_draft = SignEntry.objects.create(
+            organisation=self.other_org,
+            category=self.other_category,
+            term="Other editor draft",
+            slug="other-editor-draft",
+            video_url="https://example.com/other-draft",
+            publication_status=SignEntry.PublicationStatus.NEEDS_REVIEW,
+        )
+        self.client.login(username="glossary", password="pass12345")
+        response = self.client.get(reverse("organisation_home", args=[self.org.slug]))
+        self.assertContains(response, own_draft.term)
+        response = self.client.get(reverse("sign_detail", args=[self.org.slug, own_draft.slug]))
+        self.assertContains(response, own_draft.term)
+        response = self.client.get(reverse("organisation_home", args=[self.other_org.slug]))
+        self.assertNotContains(response, other_draft.term)
+        response = self.client.get(reverse("sign_detail", args=[self.other_org.slug, other_draft.slug]))
+        self.assertEqual(response.status_code, 404)
 
     def test_retail_dashboard_shows_retail_role_widgets(self):
         retail_user = User.objects.create_user(username="retail", password="pass12345")
@@ -380,6 +540,16 @@ class GlossaryWorkflowTests(TestCase):
         self.client.login(username="manager", password="pass12345")
         response = self.client.get(reverse("task_board", args=[self.org.slug]))
         self.assertRedirects(response, reverse("manager_dashboard", args=[self.org.slug]))
+
+    def test_glossary_editor_is_redirected_from_staff_dashboard_to_editor_dashboard(self):
+        self.client.login(username="glossary", password="pass12345")
+        response = self.client.get(reverse("staff_dashboard", args=[self.org.slug]))
+        self.assertRedirects(response, reverse("glossary_editor_dashboard", args=[self.org.slug]))
+
+    def test_glossary_editor_is_redirected_from_staff_task_board_to_editor_dashboard(self):
+        self.client.login(username="glossary", password="pass12345")
+        response = self.client.get(reverse("task_board", args=[self.org.slug]))
+        self.assertRedirects(response, reverse("glossary_editor_dashboard", args=[self.org.slug]))
 
     def test_staff_task_board_only_shows_assigned_tasks(self):
         assigned = PortalItem.objects.create(
@@ -492,6 +662,7 @@ class GlossaryWorkflowTests(TestCase):
         response = self.client.post(
             reverse("request_sign", args=[self.org.slug]),
             {
+                "request_type": SignRequest.RequestType.MISSING_SIGN,
                 "term": "Password reset",
                 "suggested_category": self.category.id,
                 "context": "Needed at the IT help desk.",
@@ -502,6 +673,7 @@ class GlossaryWorkflowTests(TestCase):
         self.assertEqual(sign_request.organisation, self.org)
         self.assertEqual(sign_request.requested_by, self.profile)
         self.assertEqual(sign_request.status, SignRequest.Status.PENDING)
+        self.assertEqual(sign_request.request_type, SignRequest.RequestType.MISSING_SIGN)
 
     def test_staff_request_form_does_not_ask_for_contact_details(self):
         self.client.login(username="staff", password="pass12345")
@@ -509,8 +681,73 @@ class GlossaryWorkflowTests(TestCase):
         self.assertContains(response, "linked to your College staff profile")
         self.assertContains(response, 'id="vue-sign-request-form"')
         self.assertContains(response, "vue-request-form.js")
+        self.assertContains(response, 'name="request_type"')
         self.assertNotContains(response, 'name="requester_name"')
         self.assertNotContains(response, 'name="requester_email"')
+
+    def test_sign_detail_has_report_issue_link(self):
+        response = self.client.get(reverse("sign_detail", args=[self.org.slug, self.sign.slug]))
+        self.assertContains(response, "Report issue")
+        self.assertContains(response, reverse("report_sign", args=[self.org.slug, self.sign.slug]))
+
+    def test_staff_can_report_existing_sign_to_glossary_editor(self):
+        self.client.login(username="staff", password="pass12345")
+        response = self.client.post(
+            reverse("report_sign", args=[self.org.slug, self.sign.slug]),
+            {
+                "request_type": SignRequest.RequestType.BROKEN_VIDEO_LINK,
+                "context": "The video link does not load at the support desk.",
+            },
+        )
+        self.assertRedirects(response, reverse("sign_detail", args=[self.org.slug, self.sign.slug]))
+        sign_report = SignRequest.objects.get()
+        self.assertEqual(sign_report.organisation, self.org)
+        self.assertEqual(sign_report.related_sign, self.sign)
+        self.assertEqual(sign_report.suggested_category, self.sign.category)
+        self.assertEqual(sign_report.term, self.sign.term)
+        self.assertEqual(sign_report.requested_by, self.profile)
+        self.assertEqual(sign_report.request_type, SignRequest.RequestType.BROKEN_VIDEO_LINK)
+        self.assertEqual(sign_report.status, SignRequest.Status.SENT_TO_INTERPRETER)
+
+        self.client.logout()
+        self.client.login(username="glossary", password="pass12345")
+        response = self.client.get(reverse("glossary_editor_dashboard", args=[self.org.slug]))
+        self.assertContains(response, "Broken video link")
+        self.assertContains(response, "Reported sign")
+        self.assertContains(response, self.sign.term)
+
+    def test_existing_sign_report_does_not_enter_manager_triage_list(self):
+        SignRequest.objects.create(
+            organisation=self.org,
+            requested_by=self.profile,
+            related_sign=self.sign,
+            suggested_category=self.sign.category,
+            term=self.sign.term,
+            request_type=SignRequest.RequestType.INCORRECT_SIGN,
+            context="The sign seems incorrect.",
+            status=SignRequest.Status.SENT_TO_INTERPRETER,
+        )
+        self.client.login(username="manager", password="pass12345")
+        response = self.client.get(reverse("manager_dashboard", args=[self.org.slug]))
+        self.assertNotContains(response, "The sign seems incorrect.")
+        self.assertContains(response, "In glossary review")
+
+    def test_visitor_can_report_existing_sign_with_contact_details(self):
+        response = self.client.post(
+            reverse("report_sign", args=[self.org.slug, self.sign.slug]),
+            {
+                "requester_name": "Visitor",
+                "requester_email": "visitor@example.com",
+                "request_type": SignRequest.RequestType.UNCLEAR_DESCRIPTION,
+                "context": "The definition is not clear enough.",
+            },
+        )
+        self.assertRedirects(response, reverse("sign_detail", args=[self.org.slug, self.sign.slug]))
+        sign_report = SignRequest.objects.get()
+        self.assertIsNone(sign_report.requested_by)
+        self.assertEqual(sign_report.requester_email, "visitor@example.com")
+        self.assertEqual(sign_report.related_sign, self.sign)
+        self.assertEqual(sign_report.status, SignRequest.Status.SENT_TO_INTERPRETER)
 
     def test_visitor_can_submit_request_with_email(self):
         response = self.client.post(
@@ -518,6 +755,7 @@ class GlossaryWorkflowTests(TestCase):
             {
                 "requester_name": "Visitor",
                 "requester_email": "visitor@example.com",
+                "request_type": SignRequest.RequestType.MISSING_SIGN,
                 "term": "Directions",
                 "suggested_category": self.category.id,
                 "context": "Needed at the reception desk.",
@@ -536,12 +774,13 @@ class GlossaryWorkflowTests(TestCase):
         self.assertContains(response, "vue-request-form.js")
         self.assertContains(response, 'name="requester_name"')
         self.assertContains(response, 'name="requester_email"')
+        self.assertContains(response, 'name="request_type"')
         self.assertContains(response, 'id="requester-name-error"')
         self.assertContains(response, 'id="requester-email-error"')
         self.assertContains(response, 'id="term-error"')
         self.assertContains(response, 'id="context-error"')
 
-    def test_manager_can_approve_request_for_interpreter_review(self):
+    def test_manager_can_send_request_to_glossary_review(self):
         sign_request = SignRequest.objects.create(
             organisation=self.org,
             requested_by=self.profile,
@@ -553,15 +792,19 @@ class GlossaryWorkflowTests(TestCase):
             reverse("review_sign_request", args=[self.org.slug, sign_request.id]),
             {
                 "status": SignRequest.Status.MANAGER_APPROVED,
-                "admin_notes": "Suitable for interpreter review.",
+                "admin_notes": "Suitable for glossary review.",
+                "decision_reason": "The request is relevant to reception staff.",
             },
         )
         self.assertRedirects(response, reverse("manager_dashboard", args=[self.org.slug]))
         sign_request.refresh_from_db()
         self.assertEqual(sign_request.status, SignRequest.Status.MANAGER_APPROVED)
-        self.assertEqual(sign_request.admin_notes, "Suitable for interpreter review.")
+        self.assertEqual(sign_request.admin_notes, "Suitable for glossary review.")
+        self.assertEqual(sign_request.decision_reason, "The request is relevant to reception staff.")
+        self.assertEqual(sign_request.reviewed_by, self.manager_profile)
+        self.assertIsNotNone(sign_request.reviewed_at)
 
-    def test_manager_review_cannot_mark_request_as_interpreter_completed(self):
+    def test_manager_review_cannot_mark_request_as_completed(self):
         sign_request = SignRequest.objects.create(
             organisation=self.org,
             requested_by=self.profile,
@@ -573,7 +816,7 @@ class GlossaryWorkflowTests(TestCase):
             reverse("review_sign_request", args=[self.org.slug, sign_request.id]),
             {
                 "status": SignRequest.Status.COMPLETED,
-                "admin_notes": "Trying to skip interpreter review.",
+                "admin_notes": "Trying to skip glossary review.",
             },
         )
         sign_request.refresh_from_db()
@@ -583,6 +826,163 @@ class GlossaryWorkflowTests(TestCase):
         self.client.login(username="staff", password="pass12345")
         response = self.client.get(reverse("manager_dashboard", args=[self.org.slug]))
         self.assertEqual(response.status_code, 404)
+
+    def test_glossary_editor_cannot_open_manager_dashboard(self):
+        self.client.login(username="glossary", password="pass12345")
+        response = self.client.get(reverse("manager_dashboard", args=[self.org.slug]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_manager_cannot_open_glossary_editor_dashboard(self):
+        self.client.login(username="manager", password="pass12345")
+        response = self.client.get(reverse("glossary_editor_dashboard", args=[self.org.slug]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_staff_member_cannot_open_glossary_editor_dashboard(self):
+        self.client.login(username="staff", password="pass12345")
+        response = self.client.get(reverse("glossary_editor_dashboard", args=[self.org.slug]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_glossary_editor_can_update_own_organisation_sign_workflow(self):
+        draft_sign = SignEntry.objects.create(
+            organisation=self.org,
+            category=self.category,
+            term="Draft sign",
+            slug="draft-sign",
+            video_url="https://example.com/draft",
+            publication_status=SignEntry.PublicationStatus.NEEDS_REVIEW,
+            video_review_status=SignEntry.VideoReviewStatus.CANDIDATE_VIDEO,
+            is_official_published=False,
+        )
+        self.client.login(username="glossary", password="pass12345")
+        response = self.client.post(
+            reverse("update_sign_workflow", args=[self.org.slug, draft_sign.id]),
+            {
+                "publication_status": SignEntry.PublicationStatus.PUBLISHED,
+                "video_review_status": SignEntry.VideoReviewStatus.APPROVED_FOR_PROTOTYPE,
+            },
+        )
+        self.assertRedirects(response, reverse("glossary_editor_dashboard", args=[self.org.slug]))
+        draft_sign.refresh_from_db()
+        self.assertEqual(draft_sign.publication_status, SignEntry.PublicationStatus.PUBLISHED)
+        self.assertEqual(
+            draft_sign.video_review_status,
+            SignEntry.VideoReviewStatus.APPROVED_FOR_PROTOTYPE,
+        )
+        self.assertTrue(draft_sign.is_official_published)
+
+    def test_glossary_editor_cannot_update_other_organisation_sign_workflow(self):
+        other_draft = SignEntry.objects.create(
+            organisation=self.other_org,
+            category=self.other_category,
+            term="Other draft",
+            slug="other-draft",
+            video_url="https://example.com/other-draft",
+            publication_status=SignEntry.PublicationStatus.NEEDS_REVIEW,
+        )
+        self.client.login(username="glossary", password="pass12345")
+        response = self.client.post(
+            reverse("update_sign_workflow", args=[self.other_org.slug, other_draft.id]),
+            {
+                "publication_status": SignEntry.PublicationStatus.PUBLISHED,
+                "video_review_status": SignEntry.VideoReviewStatus.APPROVED_FOR_PROTOTYPE,
+            },
+        )
+        self.assertEqual(response.status_code, 404)
+        other_draft.refresh_from_db()
+        self.assertEqual(other_draft.publication_status, SignEntry.PublicationStatus.NEEDS_REVIEW)
+
+    def test_staff_member_cannot_update_sign_workflow(self):
+        self.client.login(username="staff", password="pass12345")
+        response = self.client.post(
+            reverse("update_sign_workflow", args=[self.org.slug, self.sign.id]),
+            {
+                "publication_status": SignEntry.PublicationStatus.ARCHIVED,
+                "video_review_status": SignEntry.VideoReviewStatus.BROKEN_LINK,
+            },
+        )
+        self.assertEqual(response.status_code, 404)
+        self.sign.refresh_from_db()
+        self.assertEqual(self.sign.publication_status, SignEntry.PublicationStatus.PUBLISHED)
+
+    def test_edit_sign_button_only_shows_for_glossary_editor(self):
+        response = self.client.get(reverse("sign_detail", args=[self.org.slug, self.sign.slug]))
+        self.assertNotContains(response, "Edit sign")
+
+        self.client.login(username="staff", password="pass12345")
+        response = self.client.get(reverse("sign_detail", args=[self.org.slug, self.sign.slug]))
+        self.assertNotContains(response, "Edit sign")
+
+        self.client.logout()
+        self.client.login(username="manager", password="pass12345")
+        response = self.client.get(reverse("sign_detail", args=[self.org.slug, self.sign.slug]))
+        self.assertNotContains(response, "Edit sign")
+
+        self.client.logout()
+        self.client.login(username="glossary", password="pass12345")
+        response = self.client.get(reverse("sign_detail", args=[self.org.slug, self.sign.slug]))
+        self.assertContains(response, "Edit sign")
+        self.assertContains(response, reverse("edit_sign", args=[self.org.slug, self.sign.slug]))
+
+    def test_glossary_editor_can_edit_sign_from_app_and_log_changes(self):
+        self.client.login(username="glossary", password="pass12345")
+        response = self.client.post(
+            reverse("edit_sign", args=[self.org.slug, self.sign.slug]),
+            {
+                "category": self.category.id,
+                "term": "Login",
+                "slug": self.sign.slug,
+                "description": "Updated definition for staff support.",
+                "usage_context": "Used when helping users access college systems.",
+                "tags": "login, account access, support",
+                "video_url": "https://example.com/updated-login",
+                "thumbnail_url": "",
+                "publication_status": SignEntry.PublicationStatus.NEEDS_REVIEW,
+                "video_review_status": SignEntry.VideoReviewStatus.NEEDS_REPLACEMENT,
+                "is_quick_reference": "on",
+            },
+        )
+        self.assertRedirects(response, reverse("sign_detail", args=[self.org.slug, self.sign.slug]))
+        self.sign.refresh_from_db()
+        self.assertEqual(self.sign.description, "Updated definition for staff support.")
+        self.assertEqual(self.sign.tags, "login, account access, support")
+        self.assertEqual(self.sign.publication_status, SignEntry.PublicationStatus.NEEDS_REVIEW)
+        self.assertFalse(self.sign.is_official_published)
+
+        log = SignEntryChangeLog.objects.get(sign=self.sign)
+        self.assertEqual(log.edited_by, self.glossary_profile)
+        self.assertIn("description", log.changed_fields)
+        self.assertIn("tags", log.changed_fields)
+        self.assertIn("Updated", log.change_summary)
+
+    def test_staff_and_manager_cannot_open_sign_edit_page(self):
+        self.client.login(username="staff", password="pass12345")
+        response = self.client.get(reverse("edit_sign", args=[self.org.slug, self.sign.slug]))
+        self.assertEqual(response.status_code, 404)
+
+        self.client.logout()
+        self.client.login(username="manager", password="pass12345")
+        response = self.client.get(reverse("edit_sign", args=[self.org.slug, self.sign.slug]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_glossary_editor_cannot_edit_other_organisation_sign(self):
+        self.client.login(username="glossary", password="pass12345")
+        response = self.client.get(reverse("edit_sign", args=[self.other_org.slug, self.other_sign.slug]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_glossary_editor_cannot_access_django_admin(self):
+        self.client.login(username="glossary", password="pass12345")
+        response = self.client.get(reverse("admin:index"))
+        self.assertEqual(response.status_code, 302)
+
+    def test_platform_admin_can_access_django_admin_without_groups(self):
+        self.client.login(username="platform", password="pass12345")
+        response = self.client.get(reverse("admin:index"))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Groups")
+        response = self.client.get(reverse("admin:glossary_organisation_changelist"))
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get(reverse("admin:glossary_staffprofile_changelist"))
+        self.assertEqual(response.status_code, 200)
 
     def test_model_validation_rejects_cross_organisation_sign_category(self):
         sign = SignEntry(
@@ -602,6 +1002,17 @@ class GlossaryWorkflowTests(TestCase):
             suggested_category=self.other_category,
             term="Receipt",
             context="Needed at reception.",
+        )
+        with self.assertRaises(ValidationError):
+            sign_request.full_clean()
+
+    def test_model_validation_rejects_cross_organisation_related_sign_report(self):
+        sign_request = SignRequest(
+            organisation=self.org,
+            requested_by=self.profile,
+            related_sign=self.other_sign,
+            term=self.other_sign.term,
+            context="Wrong organisation report.",
         )
         with self.assertRaises(ValidationError):
             sign_request.full_clean()

@@ -8,8 +8,8 @@ skinparam shadowing false
 actor "Public visitor" as Visitor
 actor "Staff user" as Staff
 actor "Manager" as Manager
-actor "Glossary manager" as GlossaryManager
-actor "Interpreter / content reviewer" as Reviewer
+actor "Glossary editor / ISL reviewer" as GlossaryEditor
+actor "Platform admin" as PlatformAdmin
 
 rectangle "Organisation-specific ISL Glossary Platform" {
   usecase "Open organisation glossary" as UC_Open
@@ -28,11 +28,13 @@ rectangle "Organisation-specific ISL Glossary Platform" {
   usecase "Use manager dashboard" as UC_ManagerDashboard
   usecase "Assign staff tasks" as UC_AssignTask
   usecase "Review sign requests" as UC_Review
-  usecase "Approve for interpreter review" as UC_Approve
+  usecase "Send to glossary review" as UC_Approve
   usecase "Reject / ask for clarification" as UC_Clarify
 
-  usecase "Manage official content in Django admin" as UC_Admin
-  usecase "Create / update official sign entries" as UC_Content
+  usecase "Open glossary editor dashboard" as UC_EditorDashboard
+  usecase "Edit sign entry" as UC_Content
+  usecase "View sign change log" as UC_Log
+  usecase "Manage platform in Django admin" as UC_Admin
 }
 
 Visitor --> UC_Open
@@ -57,12 +59,11 @@ Manager --> UC_Review
 Manager --> UC_Approve
 Manager --> UC_Clarify
 
-GlossaryManager --> UC_ManagerDashboard
-GlossaryManager --> UC_Review
-GlossaryManager --> UC_Admin
+GlossaryEditor --> UC_EditorDashboard
+GlossaryEditor --> UC_Content
+GlossaryEditor --> UC_Log
 
-Reviewer --> UC_Admin
-Reviewer --> UC_Content
+PlatformAdmin --> UC_Admin
 
 UC_Browse ..> UC_Open : extends
 UC_Search ..> UC_Open : extends
@@ -70,11 +71,11 @@ UC_Filter ..> UC_Open : extends
 UC_View ..> UC_Search : selected result
 UC_Approve ..> UC_Review : manager decision
 UC_Clarify ..> UC_Review : manager decision
-UC_Content ..> UC_Admin : back-office workflow
+UC_Log ..> UC_Content : records edits
 
 note right of UC_Admin
-Official publication is deliberately kept
-outside the public/staff portal.
+The Django admin site is reserved
+for platform administration.
 end note
 
 @enduml

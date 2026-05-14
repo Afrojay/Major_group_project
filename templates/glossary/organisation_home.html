@@ -47,8 +47,10 @@
   {% endif %}
   <div class="actions">
     {% if staff_profile %}
-      {% if staff_profile.can_review_requests %}
+      {% if staff_profile.can_triage_requests %}
         <a class="button" href="{% url 'manager_dashboard' organisation.slug %}">Manager dashboard</a>
+      {% elif staff_profile.can_review_glossary_content %}
+        <a class="button" href="{% url 'glossary_editor_dashboard' organisation.slug %}">Glossary editor dashboard</a>
       {% else %}
         <a class="button" href="{% url 'staff_dashboard' organisation.slug %}">My dashboard</a>
       {% endif %}
@@ -135,7 +137,7 @@
 
       <div class="section-kicker glossary-results-heading" aria-live="polite">
         <div>
-          <p class="eyebrow">Vue enhanced glossary terms</p>
+          <p class="eyebrow">Glossary terms</p>
           <h2>[[ headingText ]]</h2>
         </div>
         <span class="status">[[ countText ]]</span>

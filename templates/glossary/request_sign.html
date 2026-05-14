@@ -8,9 +8,9 @@
   <p class="eyebrow">{% if staff_profile %}Staff request{% else %}Visitor request{% endif %}</p>
   <h1>Request a missing sign</h1>
   {% if staff_profile %}
-    <p>This request will be linked to your {{ organisation.name }} staff profile. Managers will review it before any approved term is passed to interpreter/content review.</p>
+    <p>This request will be linked to your {{ organisation.name }} staff profile. Organisation managers triage requests before valid items are passed to glossary editor review.</p>
   {% else %}
-    <p>Requests are reviewed by managers before any approved term is passed to interpreter/content review. Visitors need to leave an email address so the organisation can follow up when the request is reviewed.</p>
+    <p>Requests are triaged by organisation managers before valid items are passed to glossary editor review. Visitors need to leave an email address so the organisation can follow up when the request is reviewed.</p>
   {% endif %}
 
   <form
@@ -50,6 +50,14 @@
         {% endfor %}
       </p>
     {% endif %}
+
+    <p>
+      <label for="{{ form.request_type.id_for_label }}">{{ form.request_type.label }}</label>
+      {{ form.request_type }}
+      {% for error in form.request_type.errors %}
+        <span class="field-error" role="alert">{{ error }}</span>
+      {% endfor %}
+    </p>
 
     <p>
       <label for="{{ form.term.id_for_label }}">{{ form.term.label }}</label>

@@ -50,7 +50,7 @@
   </div>
   <div class="grid four-col">
     <article class="card">
-      <h3>Pending manager review</h3>
+      <h3>Pending organisation-manager review</h3>
       <p class="large-number">{{ pending_count }}</p>
     </article>
     <article class="card">
@@ -58,11 +58,11 @@
       <p class="large-number">{{ needs_clarification_count }}</p>
     </article>
     <article class="card">
-      <h3>Approved for interpreter</h3>
+      <h3>Ready for glossary review</h3>
       <p class="large-number">{{ manager_approved_count }}</p>
     </article>
     <article class="card">
-      <h3>Sent to interpreter</h3>
+      <h3>In glossary review</h3>
       <p class="large-number">{{ sent_to_interpreter_count }}</p>
     </article>
   </div>
@@ -124,8 +124,12 @@
     {% for sign_request in requests %}
       <article class="card request-card">
         <div>
-          <p class="eyebrow">{{ sign_request.suggested_category|default:"No category suggested" }}</p>
+          <p class="eyebrow">{{ sign_request.get_request_type_display }}</p>
           <h3>{{ sign_request.term }}</h3>
+          {% if sign_request.related_sign %}
+            <p class="muted">Reported sign: <a href="{{ sign_request.related_sign.get_absolute_url }}">{{ sign_request.related_sign.term }}</a></p>
+          {% endif %}
+          <p class="muted">{{ sign_request.suggested_category|default:"No category suggested" }}</p>
           <p>{{ sign_request.context }}</p>
           <p><span class="status">{{ sign_request.get_status_display }}</span></p>
           <p class="muted">
@@ -141,12 +145,14 @@
           {% csrf_token %}
           <label for="status-{{ sign_request.id }}">Manager decision</label>
           <select id="status-{{ sign_request.id }}" name="status">
-            <option value="needs_clarification">Needs clarification</option>
-            <option value="manager_approved">Approve for interpreter review</option>
-            <option value="rejected">Reject</option>
+            <option value="needs_clarification" {% if sign_request.status == "needs_clarification" %}selected{% endif %}>Needs clarification</option>
+            <option value="manager_approved" {% if sign_request.status == "manager_approved" %}selected{% endif %}>Send to glossary review</option>
+            <option value="rejected" {% if sign_request.status == "rejected" %}selected{% endif %}>Reject</option>
           </select>
           <label for="notes-{{ sign_request.id }}">Review notes</label>
           <textarea id="notes-{{ sign_request.id }}" name="admin_notes" rows="3">{{ sign_request.admin_notes }}</textarea>
+          <label for="decision-reason-{{ sign_request.id }}">Decision reason</label>
+          <textarea id="decision-reason-{{ sign_request.id }}" name="decision_reason" rows="3">{{ sign_request.decision_reason }}</textarea>
           <button class="button" type="submit">Save decision</button>
         </form>
       </article>
@@ -165,9 +171,8 @@
   </div>
   <div class="grid three-col">
     <article class="card">
-      <h3>Interpreter/content review</h3>
-      <p>Approved requests can be handled in Django admin by the person responsible for interpreter liaison and official glossary publication.</p>
-      <p class="muted">Access the Django admin directly at <strong>/admin/</strong>.</p>
+      <h3>Glossary editor review</h3>
+      <p>Approved requests can be handled by a glossary editor or ISL reviewer before anything is published.</p>
     </article>
     <article class="card">
       <h3>Publication boundary</h3>

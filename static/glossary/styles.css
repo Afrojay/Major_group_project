@@ -948,6 +948,24 @@ textarea {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
+.sign-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem;
+  margin-top: 1.25rem;
+}
+
+.sign-actions form {
+  margin: 0;
+}
+
+.sign-actions .button,
+.sign-actions button {
+  min-width: 11rem;
+  text-align: center;
+}
+
 .message {
   align-items: center;
   background: #e7f0ea;

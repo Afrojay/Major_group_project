@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Report {{ sign.term }} | {{ organisation.name }}{% endblock %}
+
+{% block content %}
+<section class="form-page org-themed-page" style="--accent: {{ organisation.safe_theme_colour }}">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ organisation.get_absolute_url }}">{{ organisation.name }}</a>
+    <span aria-hidden="true">/</span>
+    <a href="{{ sign.get_absolute_url }}">{{ sign.term }}</a>
+    <span aria-hidden="true">/</span>
+    <span>Report issue</span>
+  </nav>
+
+  <p class="eyebrow">{% if staff_profile %}Staff report{% else %}Visitor report{% endif %}</p>
+  <h1>Report an issue with {{ sign.term }}</h1>
+  <p>This report goes directly to the glossary editor so the sign, video, definition, category, or tags can be checked.</p>
+
+  <form method="post" class="form-card">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      <div class="form-errors" role="alert">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
+    {% if form.requester_name %}
+      <p>
+        <label for="{{ form.requester_name.id_for_label }}">{{ form.requester_name.label }}</label>
+        {{ form.requester_name }}
+        {% for error in form.requester_name.errors %}
+          <span class="field-error" role="alert">{{ error }}</span>
+        {% endfor %}
+      </p>
+    {% endif %}
+
+    {% if form.requester_email %}
+      <p>
+        <label for="{{ form.requester_email.id_for_label }}">{{ form.requester_email.label }}</label>
+        {{ form.requester_email }}
+        {% for error in form.requester_email.errors %}
+          <span class="field-error" role="alert">{{ error }}</span>
+        {% endfor %}
+      </p>
+    {% endif %}
+
+    <p>
+      <label for="{{ form.request_type.id_for_label }}">{{ form.request_type.label }}</label>
+      {{ form.request_type }}
+      {% for error in form.request_type.errors %}
+        <span class="field-error" role="alert">{{ error }}</span>
+      {% endfor %}
+    </p>
+
+    <p>
+      <label for="{{ form.context.id_for_label }}">{{ form.context.label }}</label>
+      {{ form.context }}
+      <span class="helptext">For example: the video link is broken, the definition is unclear, or this looks like the wrong category.</span>
+      {% for error in form.context.errors %}
+        <span class="field-error" role="alert">{{ error }}</span>
+      {% endfor %}
+    </p>
+
+    <div class="form-actions">
+      <button class="button" type="submit">Send report</button>
+      <a class="button secondary" href="{{ sign.get_absolute_url }}">Cancel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

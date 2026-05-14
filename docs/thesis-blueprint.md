@@ -1,32 +1,34 @@
 # ISL Glossary Platform - Thesis Blueprint
 
-This Django prototype should match the thesis direction for Chapters 1-5.
+These notes are intended to keep the implementation aligned with the thesis chapters. They are not a replacement for the thesis text, but they give the main argument in plain language.
 
-## Core Concept
+## Core Idea
 
-The project is an accessible and adaptable Irish Sign Language glossary platform for organisation-specific or domain-specific deployment.
+The project is an organisation-specific Irish Sign Language glossary platform. It is meant to support staff in everyday service situations, for example a computing help desk, a shop counter, or a reception desk.
 
 It is both:
 
-- an organisation-specific staff-support tool
-- a practical ISL awareness and accessibility tool
-
-It helps hearing staff become more familiar with common ISL signs and Deaf communication needs in everyday service contexts.
-
-Example domains in the prototype can include college computing, retail customer service, and healthcare reception. Healthcare examples should remain limited to everyday access and appointment-support vocabulary rather than clinical advice.
+- a local staff-support tool
+- a small accessibility and ISL-awareness prototype
 
 It is not:
 
-- a complete national ISL dictionary
-- a replacement for qualified ISL interpreters
-- a full ISL course
+- a national ISL dictionary
+- a replacement for qualified interpreters
+- an ISL course
 - formal Deaf awareness training
-- medical advice or clinical communication guidance
-- a complete commercial SaaS product
+- medical or clinical communication guidance
+- a commercial SaaS system
 
-## Prototype Feature Blueprint
+This boundary is worth repeating in the thesis, because it keeps the project realistic.
 
-Organisation -> Categories -> Sign entries -> Video URLs / embeds -> Search and browse -> Staff login -> Staff dashboard -> Favourites -> Visitor/staff sign requests -> Manager review -> Interpreter/content review -> Django admin content management
+## Feature Flow
+
+The main flow is:
+
+Organisation -> Categories -> Sign entries -> Video URLs -> Search and browse -> Staff login -> Favourites -> Requests/reports -> Manager triage -> Glossary editor review -> Sign edit page -> Change log -> Platform admin
+
+The flow may look long, but each step is fairly small. The point is to show how glossary content can move from use, to feedback, to review.
 
 ## Django Models
 
@@ -39,60 +41,57 @@ Organisation -> Categories -> Sign entries -> Video URLs / embeds -> Search and 
 - `FavouriteSign`
 - `SignRequest`
 - `PortalItem`
+- `SignEntryChangeLog`
 
 ## Key Workflows
 
-1. A user opens an organisation-specific glossary.
-2. They browse categories, use A-Z filtering, or search for a sign.
-3. They view a sign entry with an English term, ISL video URL, description, usage context and category.
+1. A user opens an organisation glossary.
+2. They search, browse categories, or filter signs A-Z.
+3. They view a sign with term, category, description, usage context and video reference.
 4. Staff can log in.
-5. Staff can favourite useful signs from their own organisation.
-6. Staff can use a basic organisation-specific dashboard with favourites, recent signs, request history, role/domain panels, and relevant manager actions.
-7. Staff can submit missing-sign requests.
-8. Visitors can submit simpler missing-sign requests with a contact email.
-9. Managers and glossary managers can review requests in an organisation-specific dashboard.
-10. Manager-approved requests can be passed to interpreter/content review.
-11. Django admin is used for official content management and publication.
-12. Sign entries can include optional transcript and thumbnail metadata to support accessibility and browsing.
-13. Staff and managers can use simple dashboard items for prototype tasks, appointments, calendar events and access notes.
+5. Staff can favourite useful signs.
+6. Staff can submit missing-sign requests.
+7. Visitors can submit requests with contact details.
+8. Users can report issues on existing signs.
+9. Organisation managers triage missing-sign requests.
+10. Glossary editors review content and edit signs.
+11. Sign edits are recorded in a simple change log.
+12. Platform admin uses Django admin for platform-level management.
 
 ## Security and Design Principles
 
-- Important content models link to an `Organisation`.
-- Organisation records support basic database-driven branding through theme colour, logo URL, description and contact email. This supports organisation-specific deployment while keeping advanced branding as future work.
-- Staff-only workflows check the logged-in user's `StaffProfile`.
-- Staff access is scoped to their profile's organisation.
-- Staff do not directly publish official signs through the public UI.
-- Staff profiles use simple role types: Staff, Manager, and Glossary manager.
-- Managers can approve requests for interpreter/content review, but they do not publish official signs through the portal.
-- Sign requests use statuses: Pending manager review, Needs clarification, Manager approved, Sent to interpreter, Completed, Rejected.
-- Sign entries include an official publication flag so unreviewed prototype content can be identified.
+- Important models link back to `Organisation`.
+- Staff access is checked through `StaffProfile`.
+- Ordinary staff only see published signs.
+- Organisation managers can triage requests but cannot publish signs.
+- Glossary editors can edit signs for their own organisation.
+- Django admin is reserved for the platform admin.
 - Django authentication and CSRF protection are used.
 
-## Security-Related Workflow Refinement
+## Workflow Refinement
 
-The request review workflow was deliberately changed from a broad organisation-admin concept to a safer role-based process. Managers and glossary managers review whether a request is suitable to progress, while interpreter/content review and official publication remain in Django admin.
+The design moved away from a broad "organisation admin" idea. That earlier approach made too many users feel like managers or administrators. The current version separates the roles more clearly:
 
-This supports a clearer separation of duties:
+- staff and visitors request or report signs
+- organisation managers decide whether missing-sign requests are relevant
+- glossary editors review and edit content
+- platform admin manages the overall system
 
-- staff and visitors can request missing signs
-- managers can triage requests
-- interpreter/content reviewers can handle official glossary publication
-
-The change reduces the risk of unvalidated sign content being published directly through the staff portal.
+This appears to be a safer design for sign-language content. It acknowledges that organisational relevance and ISL correctness are related, but not the same thing.
 
 ## Future Work
 
-Keep the following out of the core prototype unless explicitly implemented later:
+These should remain future work unless implemented later:
 
 - production security hardening
-- audit logging
+- richer audit logging
 - data export
-- billing
-- full multi-tenant SaaS administration
-- production deployment automation
-- full video hosting, captions, and automated email notifications
+- billing or SaaS features
+- deployment automation
+- full video hosting and captions
+- email notifications
+- wider testing with Deaf users and ISL stakeholders
 
-## Thesis Consistency Rule
+## Consistency Rule
 
-Only implement and document what the prototype actually supports. If a feature is partial, mark it as partial or future work in the thesis.
+Only document features that the prototype actually supports. If something is partial, it should be described as partial or future work rather than presented as complete.

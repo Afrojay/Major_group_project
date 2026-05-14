@@ -2,27 +2,31 @@
 
 ## Scope
 
-This note records the accessibility considerations reviewed for the Django prototype. It covers the organisation list, organisation glossary, sign detail page, staff dashboard, manager dashboard, and sign request form.
+These notes cover the main pages in the prototype: the organisation list, organisation glossary, sign detail page, request/report forms, staff dashboard, manager dashboard and glossary editor pages.
 
-## Implemented accessibility features
+The accessibility work here is not a full audit. It is more of a structured check of the basics that should be in place for a web prototype like this.
 
-- Semantic page landmarks: header, navigation, main content, sections and headings.
-- Skip link to the main content area.
-- Keyboard-accessible navigation using native links, buttons, forms and `details`/`summary`.
-- Visible focus indicators for links, buttons and form controls.
+## What Has Been Implemented
+
+- The pages use semantic structure: header, navigation, main content, sections and headings.
+- A skip link lets keyboard users jump to the main content.
+- Navigation uses normal links, buttons, forms and `details`/`summary`.
+- Focus states are visible on links, buttons and form controls.
 - Organisation logos use alt text based on the organisation name.
-- Glossary pages provide search, category navigation and A-Z filtering without relying only on colour.
-- Staff and visitor request forms use Django forms and CSRF protection.
-- Sign entries support optional transcript text for accessibility and search support.
-- Colour contrast was adjusted for body text, muted text, buttons, status labels and form borders.
+- Search, category navigation and A-Z filtering do not rely only on colour.
+- Request and report forms use Django forms and CSRF protection.
+- Sign entries can include transcript text, which may help both accessibility and search.
+- Text contrast was adjusted for body text, muted text, buttons, status labels and form borders.
+- Flash messages can be dismissed and also expire after a short delay.
 
-## Known limitations
+## Remaining Limitations
 
-- Video hosting and captions are not implemented in the prototype.
-- Some sample sign videos are marked as needing ISL content review before real deployment.
-- Full screen reader testing with Deaf and disabled users remains future work.
-- Automated accessibility scanning with tools such as WAVE or axe remains future work.
+- The prototype does not host its own videos or captions.
+- Some video URLs are placeholders or candidate sources that need ISL review.
+- The interface has not been tested with a full group of Deaf users, ISL users or screen-reader users.
+- Automated checks with tools such as WAVE or axe would still be useful.
+- More work would be needed to test the Vue-enhanced pages with assistive technology.
 
-## Thesis note
+## Thesis Note
 
-The prototype supports accessible structure and basic transcript metadata, but it should not be presented as a complete accessibility-tested production system. The thesis should describe video captions, broader user testing, and production accessibility auditing as future work.
+The prototype can be described as accessibility-conscious, but not fully accessibility-tested. That distinction is important. It has sensible structure, labels, keyboard controls and transcript support, but a real deployment would need wider testing with users and better video/caption handling.

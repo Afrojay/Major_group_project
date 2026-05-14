@@ -15,6 +15,12 @@
 
 {{ sign_payload|json_script:"sign-detail-data" }}
 
+{% if can_edit_sign %}
+  <nav class="editor-actions" aria-label="Glossary editor actions">
+    <a class="button" href="{% url 'edit_sign' organisation.slug sign.slug %}">Edit sign</a>
+  </nav>
+{% endif %}
+
 <article id="vue-sign-detail" class="sign-layout vue-sign-detail" v-cloak>
   <div>
     <p class="eyebrow">[[ sign.category.name ]]</p>
@@ -23,9 +29,10 @@
     <p class="lead muted" v-else>No description has been added yet.</p>
     <p>
       <span class="status">
-        [[ sign.is_official_published ? 'Official published sign' : 'Content under review' ]]
+        [[ sign.publication_status_label ]]
       </span>
     </p>
+    <p class="muted">Video review: [[ sign.video_review_status_label ]]</p>
 
     <h2>Usage context</h2>
     <p v-if="sign.usage_context">[[ sign.usage_context ]]</p>
@@ -43,15 +50,18 @@
 
     <p v-if="statusMessage" class="message" aria-live="polite">[[ statusMessage ]]</p>
 
-    <button
-      v-if="sign.can_favourite"
-      class="button"
-      type="button"
-      :aria-pressed="sign.is_favourite ? 'true' : 'false'"
-      :aria-label="favouriteLabel"
-      @click="toggleFavourite">
-      [[ sign.is_favourite ? 'Remove favourite' : 'Add favourite' ]]
-    </button>
+    <div class="sign-actions">
+      <a class="button secondary" href="{{ report_sign_url }}">Report issue</a>
+      <button
+        v-if="sign.can_favourite"
+        class="button"
+        type="button"
+        :aria-pressed="sign.is_favourite ? 'true' : 'false'"
+        :aria-label="favouriteLabel"
+        @click="toggleFavourite">
+        [[ sign.is_favourite ? 'Remove favourite' : 'Add favourite' ]]
+      </button>
+    </div>
   </div>
 
   <aside class="video-panel" aria-label="ISL video">
@@ -90,9 +100,10 @@
     <p class="lead">{{ sign.description }}</p>
     <p>
       <span class="status">
-        {% if sign.is_official_published %}Official published sign{% else %}Content under review{% endif %}
+        {{ sign.get_publication_status_display }}
       </span>
     </p>
+    <p class="muted">Video review: {{ sign.get_video_review_status_display }}</p>
 
     <h2>Usage context</h2>
     <p>{{ sign.usage_context|linebreaksbr }}</p>
@@ -113,15 +124,18 @@
       </nav>
     {% endif %}
 
-    {% if staff_profile %}
-      <form method="post" action="{% url 'toggle_favourite' organisation.slug sign.id %}">
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{{ request.path }}">
-        <button class="button" type="submit">
-          {% if is_favourite %}Remove favourite{% else %}Add favourite{% endif %}
-        </button>
-      </form>
-    {% endif %}
+    <div class="sign-actions">
+      <a class="button secondary" href="{{ report_sign_url }}">Report issue</a>
+      {% if staff_profile %}
+        <form method="post" action="{% url 'toggle_favourite' organisation.slug sign.id %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <button class="button" type="submit">
+            {% if is_favourite %}Remove favourite{% else %}Add favourite{% endif %}
+          </button>
+        </form>
+      {% endif %}
+    </div>
   </div>
 
   <aside class="video-panel" aria-label="ISL video">
@@ -153,6 +167,28 @@
     {% endif %}
   </aside>
 </article>
+
+{% if can_edit_sign and recent_change_logs %}
+  <section class="dashboard-section change-log-panel" aria-labelledby="change-log-heading">
+    <div class="section-kicker">
+      <div>
+        <p class="eyebrow">Glossary editor view</p>
+        <h2 id="change-log-heading">Recent changes</h2>
+      </div>
+    </div>
+    <div class="item-list">
+      {% for log in recent_change_logs %}
+        <article class="card">
+          <h3>{{ log.change_summary }}</h3>
+          <p class="muted">
+            {{ log.created_at|date:"j M Y, H:i" }}
+            {% if log.edited_by %}by {{ log.edited_by.user.get_username }}{% endif %}
+          </p>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+{% endif %}
 </div>
 {% endblock %}
 

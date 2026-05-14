@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Glossary editor dashboard | {{ organisation.name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-page org-themed-page" style="--accent: {{ organisation.safe_theme_colour }}">
+{% include "glossary/partials/portal_hero.html" %}
+
+<nav class="dashboard-quicknav" aria-label="Glossary editor dashboard sections">
+  <a href="#editor-overview">Overview</a>
+  <a href="#approved-requests">Approved requests</a>
+  <a href="#content-queue">Content queue</a>
+</nav>
+
+<section id="editor-overview" class="dashboard-section">
+  <div class="section-kicker">
+    <div>
+      <p class="eyebrow">Content workflow</p>
+      <h2>Glossary editor overview</h2>
+    </div>
+    <a href="{{ organisation.get_absolute_url }}">View glossary</a>
+  </div>
+  <div class="metric-grid">
+    <article class="metric">
+      <span>{{ approved_request_count }}</span>
+      <p>Approved requests</p>
+    </article>
+    <article class="metric">
+      <span>{{ signs_needing_review_count }}</span>
+      <p>Signs needing review</p>
+    </article>
+    <article class="metric">
+      <span>{{ signs_needing_video_count }}</span>
+      <p>Signs needing video</p>
+    </article>
+    <article class="metric">
+      <span>{{ published_count }}</span>
+      <p>Published signs</p>
+    </article>
+  </div>
+</section>
+
+<section id="approved-requests" class="dashboard-section">
+  <div class="section-kicker">
+    <div>
+      <p class="eyebrow">Manager handoff</p>
+      <h2>Requests ready for glossary review</h2>
+    </div>
+  </div>
+  <div class="request-list">
+    {% for sign_request in approved_requests %}
+      <article class="card">
+        <p class="eyebrow">{{ sign_request.get_request_type_display }}</p>
+        <h3>{{ sign_request.term }}</h3>
+        {% if sign_request.related_sign %}
+          <p class="muted">Reported sign: <a href="{{ sign_request.related_sign.get_absolute_url }}">{{ sign_request.related_sign.term }}</a></p>
+        {% endif %}
+        <p>{{ sign_request.context }}</p>
+        <p><span class="status">{{ sign_request.get_status_display }}</span></p>
+        {% if sign_request.decision_reason %}
+          <p class="muted">Manager reason: {{ sign_request.decision_reason }}</p>
+        {% endif %}
+      </article>
+    {% empty %}
+      <p>No requests are waiting for glossary review.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section id="content-queue" class="dashboard-section">
+  <div class="section-kicker">
+    <div>
+      <p class="eyebrow">Drafts and video checks</p>
+      <h2>Signs needing content work</h2>
+    </div>
+  </div>
+  <div class="request-list">
+    {% for sign in review_needed_signs %}
+      <article class="card request-card">
+        <div>
+          <p class="eyebrow">{{ sign.category.name }}</p>
+          <h3><a href="{{ sign.get_absolute_url }}">{{ sign.term }}</a></h3>
+          <p>{{ sign.description|default:"No description yet." }}</p>
+          <p><span class="status">{{ sign.get_publication_status_display }}</span></p>
+          <p class="muted">Video: {{ sign.get_video_review_status_display }}</p>
+        </div>
+        <form method="post" action="{% url 'update_sign_workflow' organisation.slug sign.id %}">
+          {% csrf_token %}
+          <label for="publication-status-{{ sign.id }}">Publication status</label>
+          <select id="publication-status-{{ sign.id }}" name="publication_status">
+            {% for value, label in publication_status_choices %}
+              <option value="{{ value }}" {% if sign.publication_status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <label for="video-review-status-{{ sign.id }}">Video review status</label>
+          <select id="video-review-status-{{ sign.id }}" name="video_review_status">
+            {% for value, label in video_review_status_choices %}
+              <option value="{{ value }}" {% if sign.video_review_status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <button class="button" type="submit">Update workflow</button>
+        </form>
+      </article>
+    {% empty %}
+      <p>No draft or review-needed signs for this organisation.</p>
+    {% endfor %}
+  </div>
+</section>
+</div>
+{% endblock %}

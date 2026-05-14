@@ -2,8 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Count
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -11,8 +10,24 @@ from django.utils import timezone
 from django.utils.http import urlencode
 from django.views.decorators.http import require_POST
 
-from .forms import AssignedTaskForm, PortalItemForm, SignRequestForm, SignRequestReviewForm
-from .models import Category, FavouriteSign, Organisation, PortalItem, SignEntry, SignRequest
+from .forms import (
+    AssignedTaskForm,
+    PortalItemForm,
+    SignEntryEditForm,
+    SignReportForm,
+    SignRequestForm,
+    SignRequestReviewForm,
+    SignWorkflowForm,
+)
+from .models import (
+    Category,
+    FavouriteSign,
+    Organisation,
+    PortalItem,
+    SignEntry,
+    SignEntryChangeLog,
+    SignRequest,
+)
 
 ALPHABET = tuple("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
@@ -51,13 +66,40 @@ def _require_staff_profile(user, organisation):
 
 def _require_request_reviewer_profile(user, organisation):
     profile = _require_staff_profile(user, organisation)
-    if not profile.can_review_requests:
+    if not profile.can_triage_requests:
         raise Http404("No manager profile for this organisation.")
     return profile
 
 
-def _search_signs(organisation, query, category_slug="", letter=""):
+def _require_glossary_editor_profile(user, organisation):
+    profile = _require_staff_profile(user, organisation)
+    if not profile.can_review_glossary_content:
+        raise Http404("No glossary editor profile for this organisation.")
+    return profile
+
+
+def _can_view_unpublished_signs(user, organisation):
+    if not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    profile = getattr(user, "staff_profile", None)
+    return bool(
+        profile
+        and profile.organisation_id == organisation.id
+        and (profile.can_triage_requests or profile.can_review_glossary_content)
+    )
+
+
+def _signs_for_user(organisation, user):
     signs = organisation.signs.select_related("category")
+    if _can_view_unpublished_signs(user, organisation):
+        return signs
+    return signs.filter(publication_status=SignEntry.PublicationStatus.PUBLISHED)
+
+
+def _search_signs(organisation, query, category_slug="", letter="", user=None):
+    signs = _signs_for_user(organisation, user) if user is not None else organisation.signs.select_related("category")
     if category_slug:
         signs = signs.filter(category__slug=category_slug)
     if letter:
@@ -93,6 +135,10 @@ def _serialise_sign(sign, favourite_ids=None):
         "thumbnail_url": sign.thumbnail_url,
         "is_quick_reference": sign.is_quick_reference,
         "is_official_published": sign.is_official_published,
+        "publication_status": sign.publication_status,
+        "publication_status_label": sign.get_publication_status_display(),
+        "video_review_status": sign.video_review_status,
+        "video_review_status_label": sign.get_video_review_status_display(),
         "is_favourite": sign.id in favourite_ids,
         "detail_url": sign.get_absolute_url(),
         "favourite_url": reverse(
@@ -193,7 +239,7 @@ def _portal_cards_for(organisation, profile):
                 },
                 {
                     "title": "Accessibility needs",
-                    "body": "Track non-clinical access notes such as interpreter needed, quiet waiting area, or written instructions.",
+                    "body": "Track non-clinical access notes such as communication support needed, quiet waiting area, or written instructions.",
                     "status": "Access notes",
                     "action_label": "+ Add note",
                     "href": organisation.get_absolute_url(),
@@ -217,24 +263,24 @@ def _portal_cards_for(organisation, profile):
             ]
         )
 
-    if profile.can_review_requests:
+    if profile.can_triage_requests:
         cards.append(
             {
                 "title": "Manager to-dos",
-                "body": "Review pending sign requests and decide whether they need clarification or interpreter review.",
+                "body": "Review pending sign requests and decide whether they need clarification or glossary review.",
                 "status": "Reviewer access",
                 "href": reverse("manager_dashboard", kwargs={"organisation_slug": organisation.slug}),
                 "link_label": "Review requests",
             }
         )
-    if profile.can_prepare_glossary_content:
+    if profile.can_review_glossary_content:
         cards.append(
             {
-                "title": "Glossary preparation",
-                "body": "Prepare manager-approved requests for interpreter/content review in the back office.",
-                "status": "Glossary manager",
-                "href": reverse("manager_dashboard", kwargs={"organisation_slug": organisation.slug}),
-                "link_label": "Open review pipeline",
+                "title": "Glossary editing",
+                "body": "Review approved requests, draft glossary entries, and update video/content workflow states.",
+                "status": "Glossary editor",
+                "href": reverse("glossary_editor_dashboard", kwargs={"organisation_slug": organisation.slug}),
+                "link_label": "Open content queue",
             }
         )
     return cards
@@ -266,13 +312,26 @@ def _user_display_name(user):
 
 
 def _portal_hero_context(user, profile, organisation, portal_type):
+    if portal_type == "glossary_editor":
+        return {
+            "eyebrow": "Glossary editor workspace",
+            "title": f"Welcome to {organisation.name}",
+            "message": (
+                f"Hi {_user_display_name(user)}. You can review approved requests, "
+                "check draft signs, and update glossary content workflow states."
+            ),
+            "actions": [
+                {"label": "View public glossary", "href": organisation.get_absolute_url(), "class": "button"},
+            ],
+            "show_time": False,
+        }
     if portal_type == "manager":
         return {
             "eyebrow": f"{profile.get_role_type_display()} workspace",
             "title": f"Welcome to {organisation.name}",
             "message": (
                 f"Hi {_user_display_name(user)}. You can triage sign requests, "
-                "assign staff tasks, and prepare approved items for interpreter/content review."
+                "assign staff tasks, and send valid requests to glossary review."
             ),
             "actions": [
                 {"label": "View public glossary", "href": organisation.get_absolute_url(), "class": "button"},
@@ -316,8 +375,10 @@ def organisation_list(request):
 def dashboard_redirect(request):
     profile = getattr(request.user, "staff_profile", None)
     if profile:
-        if profile.can_review_requests:
+        if profile.can_triage_requests:
             return redirect("manager_dashboard", organisation_slug=profile.organisation.slug)
+        if profile.can_review_glossary_content:
+            return redirect("glossary_editor_dashboard", organisation_slug=profile.organisation.slug)
         return redirect("staff_dashboard", organisation_slug=profile.organisation.slug)
     messages.info(request, "No staff profile is linked to this account yet.")
     return redirect("organisation_list")
@@ -325,6 +386,12 @@ def dashboard_redirect(request):
 
 def organisation_home(request, organisation_slug):
     organisation = get_object_or_404(Organisation, slug=organisation_slug)
+    can_view_unpublished = _can_view_unpublished_signs(request.user, organisation)
+    visible_status_filter = (
+        Q()
+        if can_view_unpublished
+        else Q(signs__publication_status=SignEntry.PublicationStatus.PUBLISHED)
+    )
     query = request.GET.get("q", "").strip()
     selected_category_slug = request.GET.get("category", "").strip()
     selected_letter = request.GET.get("letter", "").strip().upper()[:1]
@@ -337,9 +404,11 @@ def organisation_home(request, organisation_slug):
             organisation=organisation,
             slug=selected_category_slug,
         )
-    signs = _search_signs(organisation, query, selected_category_slug, selected_letter)
-    categories = organisation.categories.annotate(sign_count=Count("signs")).prefetch_related("signs")
-    quick_signs = organisation.signs.filter(is_quick_reference=True).select_related("category")
+    signs = _search_signs(organisation, query, selected_category_slug, selected_letter, request.user)
+    categories = organisation.categories.annotate(
+        sign_count=Count("signs", filter=visible_status_filter)
+    ).prefetch_related("signs")
+    quick_signs = _signs_for_user(organisation, request.user).filter(is_quick_reference=True)
     if selected_category:
         quick_signs = quick_signs.filter(category=selected_category)
     quick_signs = quick_signs[:8]
@@ -361,7 +430,7 @@ def organisation_home(request, organisation_slug):
             "selected_letter": selected_letter,
             "signs": signs,
             "result_count": signs.count(),
-            "total_sign_count": organisation.signs.count(),
+            "total_sign_count": _signs_for_user(organisation, request.user).count(),
             "quick_signs": quick_signs,
             "faqs": faqs,
             "staff_profile": profile,
@@ -384,6 +453,7 @@ def organisation_signs_api(request, organisation_slug):
         query,
         selected_category_slug,
         selected_letter,
+        request.user,
     ).select_related("category")
     profile = _staff_profile_for(request.user, organisation)
     favourite_ids = set()
@@ -419,6 +489,8 @@ def category_detail(request, organisation_slug, category_slug):
         slug=category_slug,
     )
     signs = category.signs.select_related("organisation", "category")
+    if not _can_view_unpublished_signs(request.user, organisation):
+        signs = signs.filter(publication_status=SignEntry.PublicationStatus.PUBLISHED)
     return render(
         request,
         "glossary/category_detail.html",
@@ -437,6 +509,8 @@ def sign_detail(request, organisation_slug, sign_slug):
         organisation=organisation,
         slug=sign_slug,
     )
+    if not sign.is_publicly_visible and not _can_view_unpublished_signs(request.user, organisation):
+        raise Http404("No published sign found.")
     try:
         transcript = sign.transcript
     except ObjectDoesNotExist:
@@ -445,6 +519,7 @@ def sign_detail(request, organisation_slug, sign_slug):
     is_favourite = False
     if profile:
         is_favourite = FavouriteSign.objects.filter(staff_profile=profile, sign=sign).exists()
+    can_edit_sign = bool(profile and profile.can_review_glossary_content)
     return render(
         request,
         "glossary/sign_detail.html",
@@ -454,6 +529,11 @@ def sign_detail(request, organisation_slug, sign_slug):
             "transcript": transcript,
             "staff_profile": profile,
             "is_favourite": is_favourite,
+            "can_edit_sign": can_edit_sign,
+            "report_sign_url": reverse("report_sign", args=[organisation.slug, sign.slug]),
+            "recent_change_logs": sign.change_logs.select_related("edited_by", "edited_by__user")[:5]
+            if can_edit_sign
+            else [],
             "sign_payload": _serialise_sign_detail(
                 sign,
                 transcript=transcript,
@@ -465,18 +545,114 @@ def sign_detail(request, organisation_slug, sign_slug):
     )
 
 
+def report_sign(request, organisation_slug, sign_slug):
+    organisation = get_object_or_404(Organisation, slug=organisation_slug)
+    sign = get_object_or_404(
+        _signs_for_user(organisation, request.user),
+        organisation=organisation,
+        slug=sign_slug,
+    )
+    profile = _staff_profile_for(request.user, organisation)
+    if request.method == "POST":
+        form = SignReportForm(
+            request.POST,
+            organisation=organisation,
+            sign=sign,
+            staff_profile=profile,
+        )
+        if form.is_valid():
+            sign_report = form.save(commit=False)
+            sign_report.organisation = organisation
+            sign_report.related_sign = sign
+            sign_report.term = sign.term
+            sign_report.suggested_category = sign.category
+            sign_report.status = SignRequest.Status.SENT_TO_INTERPRETER
+            sign_report.requested_by = profile
+            if profile:
+                sign_report.requester_name = request.user.get_full_name() or request.user.get_username()
+                sign_report.requester_email = request.user.email
+            sign_report.full_clean()
+            sign_report.save()
+            messages.success(request, "Your sign report has been sent to the glossary editor.")
+            return redirect(sign.get_absolute_url())
+    else:
+        form = SignReportForm(organisation=organisation, sign=sign, staff_profile=profile)
+    return render(
+        request,
+        "glossary/report_sign.html",
+        {
+            "organisation": organisation,
+            "sign": sign,
+            "form": form,
+            "staff_profile": profile,
+        },
+    )
+
+
+@login_required
+def edit_sign(request, organisation_slug, sign_slug):
+    organisation = get_object_or_404(Organisation, slug=organisation_slug)
+    profile = _require_glossary_editor_profile(request.user, organisation)
+    sign = get_object_or_404(
+        SignEntry.objects.select_related("category", "organisation"),
+        organisation=organisation,
+        slug=sign_slug,
+    )
+    if request.method == "POST":
+        form = SignEntryEditForm(request.POST, instance=sign, organisation=organisation)
+        if form.is_valid():
+            changed_fields = list(form.changed_data)
+            updated_sign = form.save(commit=False)
+            updated_sign.is_official_published = (
+                updated_sign.publication_status == SignEntry.PublicationStatus.PUBLISHED
+            )
+            updated_sign.full_clean()
+            updated_sign.save()
+            if changed_fields:
+                labels = [
+                    form.fields[field].label or field.replace("_", " ").title()
+                    for field in changed_fields
+                ]
+                SignEntryChangeLog.objects.create(
+                    sign=updated_sign,
+                    edited_by=profile,
+                    changed_fields=", ".join(changed_fields),
+                    change_summary=f"Updated {', '.join(labels)}.",
+                )
+                messages.success(request, f"{updated_sign.term} was updated.")
+            else:
+                messages.info(request, "No sign changes were saved.")
+            return redirect(updated_sign.get_absolute_url())
+    else:
+        form = SignEntryEditForm(instance=sign, organisation=organisation)
+    return render(
+        request,
+        "glossary/sign_edit.html",
+        {
+            "organisation": organisation,
+            "sign": sign,
+            "form": form,
+            "change_logs": sign.change_logs.select_related("edited_by", "edited_by__user")[:10],
+        },
+    )
+
+
 @login_required
 def staff_dashboard(request, organisation_slug):
     organisation = get_object_or_404(Organisation, slug=organisation_slug)
     profile = _require_staff_profile(request.user, organisation)
-    if profile.can_review_requests:
+    if profile.can_triage_requests:
         return redirect("manager_dashboard", organisation_slug=organisation.slug)
-    favourites = profile.favourites.select_related("sign", "sign__category")
+    if profile.can_review_glossary_content:
+        return redirect("glossary_editor_dashboard", organisation_slug=organisation.slug)
+    favourites = profile.favourites.filter(
+        sign__publication_status=SignEntry.PublicationStatus.PUBLISHED
+    ).select_related("sign", "sign__category")
     requests = profile.sign_requests.select_related("suggested_category")
-    recent_signs = organisation.signs.select_related("category").order_by("-updated_at")[:5]
-    quick_reference_count = organisation.signs.filter(is_quick_reference=True).count()
+    recent_signs = _signs_for_user(organisation, request.user).order_by("-updated_at")[:5]
+    quick_reference_count = _signs_for_user(organisation, request.user).filter(is_quick_reference=True).count()
     pending_review_count = 0
-    if profile.can_review_requests:
+    if profile.can_triage_requests:
         pending_review_count = organisation.sign_requests.filter(status=SignRequest.Status.PENDING).count()
     default_item_type = _default_portal_item_type(organisation)
     portal_items = organisation.portal_items.filter(item_type=default_item_type)[:8]
@@ -510,9 +686,11 @@ def staff_dashboard(request, organisation_slug):
 def staff_dashboard_api(request, organisation_slug):
     organisation = get_object_or_404(Organisation, slug=organisation_slug)
     profile = _require_staff_profile(request.user, organisation)
-    favourites = profile.favourites.select_related("sign", "sign__category", "sign__organisation")[:6]
+    favourites = profile.favourites.filter(
+        sign__publication_status=SignEntry.PublicationStatus.PUBLISHED
+    ).select_related("sign", "sign__category", "sign__organisation")[:6]
     favourite_ids = {favourite.sign_id for favourite in favourites}
-    recent_signs = organisation.signs.select_related("category", "organisation").order_by("-updated_at")[:6]
+    recent_signs = _signs_for_user(organisation, request.user).select_related("category", "organisation").order_by("-updated_at")[:6]
     requests = profile.sign_requests.select_related("suggested_category")[:6]
     return JsonResponse(
         {
@@ -571,8 +749,10 @@ def create_portal_item(request, organisation_slug):
 def task_board(request, organisation_slug):
     organisation = get_object_or_404(Organisation, slug=organisation_slug)
     profile = _require_staff_profile(request.user, organisation)
-    if profile.can_review_requests:
+    if profile.can_triage_requests:
         return redirect("manager_dashboard", organisation_slug=organisation.slug)
+    if profile.can_review_glossary_content:
+        return redirect("glossary_editor_dashboard", organisation_slug=organisation.slug)
     tasks = organisation.portal_items.filter(
         item_type=PortalItem.ItemType.TASK,
         assigned_to=profile,
@@ -614,7 +794,7 @@ def complete_portal_item(request, organisation_slug, item_id):
     organisation = get_object_or_404(Organisation, slug=organisation_slug)
     profile = _require_staff_profile(request.user, organisation)
     item = get_object_or_404(PortalItem, id=item_id, organisation=organisation)
-    if item.assigned_to_id and item.assigned_to_id != profile.id and not profile.can_review_requests:
+    if item.assigned_to_id and item.assigned_to_id != profile.id and not profile.can_triage_requests:
         raise Http404("This task is not assigned to this staff profile.")
     item.is_complete = True
     item.save(update_fields=["is_complete", "updated_at"])
@@ -661,7 +841,7 @@ def request_sign(request, organisation_slug):
 def toggle_favourite(request, organisation_slug, sign_id):
     organisation = get_object_or_404(Organisation, slug=organisation_slug)
     profile = _require_staff_profile(request.user, organisation)
-    sign = get_object_or_404(SignEntry, id=sign_id, organisation=organisation)
+    sign = get_object_or_404(_signs_for_user(organisation, request.user), id=sign_id, organisation=organisation)
     favourite, created = FavouriteSign.objects.get_or_create(staff_profile=profile, sign=sign)
     is_favourite = created
     if created:
@@ -694,6 +874,16 @@ def manager_dashboard(request, organisation_slug):
         "requested_by",
         "requested_by__user",
         "suggested_category",
+        "related_sign",
+        "reviewed_by",
+        "reviewed_by__user",
+    ).filter(
+        status__in=[
+            SignRequest.Status.PENDING,
+            SignRequest.Status.NEEDS_CLARIFICATION,
+            SignRequest.Status.MANAGER_APPROVED,
+            SignRequest.Status.REJECTED,
+        ]
     )
     status_counts = {
         item["status"]: item["total"]
@@ -721,7 +911,10 @@ def manager_dashboard(request, organisation_slug):
                 0,
             ),
             "rejected_count": status_counts.get(SignRequest.Status.REJECTED, 0),
-            "sign_count": organisation.signs.count(),
+            "sign_count": organisation.signs.filter(
+                publication_status=SignEntry.PublicationStatus.PUBLISHED
+            ).count(),
+            "recent_requests": requests[:6],
             "category_count": organisation.categories.count(),
             "staff_count": organisation.staff_profiles.count(),
             "tasks": tasks,
@@ -732,14 +925,100 @@ def manager_dashboard(request, organisation_slug):
 
 
 @login_required
+def glossary_editor_dashboard(request, organisation_slug):
+    organisation = get_object_or_404(Organisation, slug=organisation_slug)
+    profile = _require_glossary_editor_profile(request.user, organisation)
+    requests = organisation.sign_requests.filter(
+        status__in=[
+            SignRequest.Status.MANAGER_APPROVED,
+            SignRequest.Status.SENT_TO_INTERPRETER,
+        ]
+    ).select_related(
+        "requested_by",
+        "requested_by__user",
+        "suggested_category",
+        "related_sign",
+        "reviewed_by",
+        "reviewed_by__user",
+    )
+    signs_needing_video = organisation.signs.filter(
+        Q(publication_status=SignEntry.PublicationStatus.NEEDS_VIDEO)
+        | Q(
+            video_review_status__in=[
+                SignEntry.VideoReviewStatus.BROKEN_LINK,
+                SignEntry.VideoReviewStatus.NEEDS_REPLACEMENT,
+            ]
+        )
+    )
+    review_needed_signs = organisation.signs.filter(
+        Q(
+            publication_status__in=[
+                SignEntry.PublicationStatus.DRAFT,
+                SignEntry.PublicationStatus.NEEDS_REVIEW,
+                SignEntry.PublicationStatus.NEEDS_VIDEO,
+            ]
+        )
+        | Q(
+            video_review_status__in=[
+                SignEntry.VideoReviewStatus.BROKEN_LINK,
+                SignEntry.VideoReviewStatus.NEEDS_REPLACEMENT,
+            ]
+        )
+    ).select_related("category")
+    return render(
+        request,
+        "glossary/glossary_editor_dashboard.html",
+        {
+            "organisation": organisation,
+            "staff_profile": profile,
+            "approved_requests": requests[:8],
+            "approved_request_count": requests.count(),
+            "signs_needing_review_count": review_needed_signs.count(),
+            "signs_needing_video_count": signs_needing_video.count(),
+            "review_needed_signs": review_needed_signs[:10],
+            "publication_status_choices": SignEntry.PublicationStatus.choices,
+            "video_review_status_choices": SignEntry.VideoReviewStatus.choices,
+            "published_count": organisation.signs.filter(
+                publication_status=SignEntry.PublicationStatus.PUBLISHED
+            ).count(),
+            "portal_hero": _portal_hero_context(request.user, profile, organisation, "glossary_editor"),
+        },
+    )
+
+
+@login_required
+@require_POST
+def update_sign_workflow(request, organisation_slug, sign_id):
+    organisation = get_object_or_404(Organisation, slug=organisation_slug)
+    _require_glossary_editor_profile(request.user, organisation)
+    sign = get_object_or_404(SignEntry, id=sign_id, organisation=organisation)
+    form = SignWorkflowForm(request.POST, instance=sign)
+    if form.is_valid():
+        updated_sign = form.save(commit=False)
+        updated_sign.is_official_published = (
+            updated_sign.publication_status == SignEntry.PublicationStatus.PUBLISHED
+        )
+        updated_sign.full_clean()
+        updated_sign.save()
+        messages.success(request, f"{updated_sign.term} workflow status was updated.")
+    else:
+        messages.error(request, "The sign workflow status could not be updated.")
+    return redirect("glossary_editor_dashboard", organisation_slug=organisation.slug)
+
+
+@login_required
 @require_POST
 def review_sign_request(request, organisation_slug, request_id):
     organisation = get_object_or_404(Organisation, slug=organisation_slug)
-    _require_request_reviewer_profile(request.user, organisation)
+    profile = _require_request_reviewer_profile(request.user, organisation)
     sign_request = get_object_or_404(SignRequest, id=request_id, organisation=organisation)
     form = SignRequestReviewForm(request.POST, instance=sign_request)
     if form.is_valid():
-        form.save()
+        reviewed_request = form.save(commit=False)
+        reviewed_request.reviewed_by = profile
+        reviewed_request.reviewed_at = timezone.now()
+        reviewed_request.full_clean()
+        reviewed_request.save()
         messages.success(request, f"{sign_request.term} request was updated.")
     else:
         messages.error(request, "The request could not be updated.")

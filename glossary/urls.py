@@ -22,6 +22,16 @@ urlpatterns = [
         name="sign_detail",
     ),
     path(
+        "org/<slug:organisation_slug>/sign/<slug:sign_slug>/edit/",
+        views.edit_sign,
+        name="edit_sign",
+    ),
+    path(
+        "org/<slug:organisation_slug>/sign/<slug:sign_slug>/report/",
+        views.report_sign,
+        name="report_sign",
+    ),
+    path(
         "org/<slug:organisation_slug>/dashboard/",
         views.staff_dashboard,
         name="staff_dashboard",
@@ -60,6 +70,16 @@ urlpatterns = [
         "org/<slug:organisation_slug>/manager-dashboard/",
         views.manager_dashboard,
         name="manager_dashboard",
+    ),
+    path(
+        "org/<slug:organisation_slug>/glossary-dashboard/",
+        views.glossary_editor_dashboard,
+        name="glossary_editor_dashboard",
+    ),
+    path(
+        "org/<slug:organisation_slug>/glossary-dashboard/sign/<int:sign_id>/workflow/",
+        views.update_sign_workflow,
+        name="update_sign_workflow",
     ),
     path(
         "org/<slug:organisation_slug>/manager-dashboard/request/<int:request_id>/",

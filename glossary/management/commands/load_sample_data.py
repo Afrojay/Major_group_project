@@ -72,7 +72,6 @@ TERM_DESCRIPTIONS = {
     "Help": "Assistance or support given to someone who needs it.",
 }
 
-
 SAMPLE_DATA = [
     {
         "name": "College Computing Department",
@@ -146,11 +145,15 @@ def video_details_for(term):
         return {
             "video_url": details["video_url"],
             "usage_context_extra": f"Video source: {details['source_label']} ({details['source_url']}). {details['source_note']}",
-            "is_official_published": False,
+            "publication_status": SignEntry.PublicationStatus.PUBLISHED,
+            "video_review_status": SignEntry.VideoReviewStatus.CANDIDATE_VIDEO,
+            "is_official_published": True,
         }
     return {
         "video_url": FALLBACK_VIDEO_URL,
         "usage_context_extra": "Video status: Needs review. A suitable verified ISL video was not available during initial content sourcing, so this sign needs later review or custom content.",
+        "publication_status": SignEntry.PublicationStatus.NEEDS_VIDEO,
+        "video_review_status": SignEntry.VideoReviewStatus.NEEDS_REPLACEMENT,
         "is_official_published": False,
     }
 
@@ -170,6 +173,21 @@ class Command(BaseCommand):
     help = "Load or refresh sample organisations, categories, signs, and FAQs."
 
     def handle(self, *args, **options):
+        platform_admin, created = User.objects.get_or_create(
+            username="platform_admin",
+            defaults={"email": "platform_admin@example.com"},
+        )
+        if created:
+            platform_admin.set_password("prototype123")
+        platform_admin.is_staff = True
+        platform_admin.is_superuser = True
+        platform_admin.is_active = True
+        platform_admin.save()
+
+        User.objects.filter(
+            username__in=["college_admin", "retail_admin", "healthcare_admin"]
+        ).delete()
+
         for organisation_data in SAMPLE_DATA:
             organisation, _ = Organisation.objects.update_or_create(
                 slug=organisation_data["slug"],
@@ -219,6 +237,8 @@ class Command(BaseCommand):
                                 "Emergency",
                                 "Help",
                             },
+                            "publication_status": video_details["publication_status"],
+                            "video_review_status": video_details["video_review_status"],
                             "is_official_published": video_details["is_official_published"],
                         },
                     )
@@ -294,17 +314,19 @@ class Command(BaseCommand):
                 username=organisation_data["glossary_manager_username"],
                 defaults={
                     "email": f"{organisation_data['glossary_manager_username']}@example.com",
-                    "is_staff": True,
                 },
             )
             if created:
                 glossary_user.set_password("prototype123")
-                glossary_user.save()
+            glossary_user.is_staff = False
+            glossary_user.is_superuser = False
+            glossary_user.is_active = True
+            glossary_user.save()
             StaffProfile.objects.update_or_create(
                 user=glossary_user,
                 defaults={
                     "organisation": organisation,
-                    "role": "Glossary manager",
+                    "role": "Glossary editor",
                     "role_type": StaffProfile.RoleType.GLOSSARY_MANAGER,
                 },
             )

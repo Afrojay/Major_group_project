@@ -39,7 +39,7 @@
       <span>{{ assigned_task_count }}</span>
       <p>Assigned tasks</p>
     </a>
-    {% if staff_profile.can_review_requests %}
+    {% if staff_profile.can_triage_requests %}
       <a class="metric metric-link" href="{% url 'manager_dashboard' organisation.slug %}">
         <span>{{ pending_review_count }}</span>
         <p>Pending reviews</p>

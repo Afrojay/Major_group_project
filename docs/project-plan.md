@@ -1,75 +1,78 @@
-# ISL Glossary Platform - Thesis Prototype Plan
+# ISL Glossary Platform - Prototype Plan
 
-## Thesis-aligned purpose
+## Purpose
 
-The platform is an accessible and adaptable Irish Sign Language glossary prototype for organisation-specific or domain-specific deployment. It is intended as a staff-support and ISL awareness tool for everyday service contexts.
+The platform is an adaptable Irish Sign Language glossary prototype for organisation-specific use. I am treating it as a staff-support and accessibility tool rather than a complete dictionary.
 
-It should be described as a prototype, not as a national dictionary, formal ISL course, replacement for interpreters, full Deaf awareness programme, clinical guidance system, or commercial SaaS product.
+That boundary is important. A real ISL dictionary needs much more linguistic detail and proper expert review. This prototype focuses on a smaller question: could an organisation maintain a local glossary of useful signs for its own staff?
 
-The sample deployments cover college computing, retail customer service, and healthcare reception. Healthcare is included as a domain-specific access example, with content limited to everyday reception and appointment-support terms.
+The sample deployments are:
 
-## Implemented model map
+- College Computing Department
+- Retail Customer Service
+- Healthcare Reception
 
-- `Organisation`: tenant-like grouping for all important content.
-- `Category`: organisation-specific grouping of signs.
-- `SignEntry`: official glossary content managed through Django admin.
-- `Transcript`: optional text transcript linked to a sign for accessibility and search support.
-- `FAQEntry`: organisation-specific support content for common questions.
-- `StaffProfile`: connects a Django user to one organisation.
-- `FavouriteSign`: lets staff save useful organisation signs.
-- `SignRequest`: lets staff or visitors request missing signs without publishing official content.
-- `PortalItem`: simple prototype staff/manager dashboard items such as tasks, appointments, calendar notes, and access notes.
+The healthcare example is limited to reception and appointment-support vocabulary. It should not be read as clinical guidance.
 
-## Implemented workflows
+## Model Map
 
-1. A visitor opens the list of available organisations.
-2. A visitor opens an organisation-specific glossary.
-3. A visitor browses categories, filters by first letter, or searches signs within that organisation.
-4. A visitor views a sign entry with term, video URL, description, usage context, category, and optional transcript.
-5. Staff log in through Django authentication.
-6. Staff with an organisation profile are redirected after login to a basic organisation-specific portal dashboard.
-7. The dashboard includes role/domain panels such as retail tasks, college calendar notes, healthcare reception checks, and manager to-dos.
-8. Staff can favourite signs from their own organisation.
-9. Staff can submit missing-sign requests for their own organisation.
-10. Visitors can submit missing-sign requests with a contact email.
-11. Managers and glossary managers review requests in a domain-specific dashboard.
-12. Approved requests can then be handled through Django admin for interpreter/content review and official publication.
-13. Official signs can be marked as published and can optionally include transcript and thumbnail metadata.
+- `Organisation`: the local deployment context.
+- `Category`: groups signs inside one organisation.
+- `SignEntry`: a glossary term with description, context, tags, video URL and workflow status.
+- `SignEntryChangeLog`: records simple edit history for signs.
+- `Transcript`: optional text transcript linked to a sign.
+- `FAQEntry`: short organisation-specific support content.
+- `StaffProfile`: connects a Django user to one organisation and role.
+- `FavouriteSign`: saved signs for staff.
+- `SignRequest`: missing-sign requests and reports about existing signs.
+- `PortalItem`: small dashboard items such as tasks, appointments and notes.
 
-## Security/design notes
+## Main Workflows
 
-- Core content models link to `Organisation`.
-- Staff-only workflows check the logged-in user's `StaffProfile`.
-- Favourites and requests are scoped to the staff user's organisation.
-- Staff users submit requests but cannot publish official `SignEntry` content through the public UI.
-- Staff roles are represented on `StaffProfile`: staff, manager, and glossary manager.
-- Managers can triage requests, but they do not publish official signs through the portal.
-- Django admin is treated as the interpreter/content back office for official sign publication.
-- Sign entries include an official publication flag so prototype content can be distinguished from reviewed content.
-- Transcripts support accessibility, but full captioned media hosting remains future work.
-- Django CSRF protection and authentication middleware are enabled.
+1. A visitor opens the organisation list.
+2. They choose an organisation, such as College Computing.
+3. They browse categories, search signs, or filter by first letter.
+4. They open a sign detail page.
+5. Staff can log in and are redirected to their own organisation dashboard.
+6. Staff can favourite signs.
+7. Staff or visitors can request a missing sign.
+8. Staff or visitors can report an issue with an existing sign.
+9. Organisation managers triage missing-sign requests.
+10. Glossary editors review approved requests and direct sign reports.
+11. Glossary editors can edit sign definitions, tags, video details and workflow statuses.
+12. Sign edits create a simple change log.
 
-## Security-related design change
+This is a modest workflow, but it shows the difference between using the glossary and managing its content.
 
-The prototype originally considered a broader organisation-admin dashboard for request review. This was refined for security and governance reasons: the public/staff portal now separates request triage from official content publication. Managers and glossary managers can approve, reject, or ask for clarification on requests, but they cannot publish official signs from the portal. Interpreter/content review and official sign creation remain in the Django admin back office.
+## Security and Design Notes
 
-This separation reduces the risk of unvalidated or unsafe sign content being published directly by service staff, which is especially important for sensitive domains such as healthcare reception.
+- Core content is linked to `Organisation`.
+- Staff-only pages check the user's `StaffProfile`.
+- Favourites, requests and reports are organisation-scoped.
+- Staff and organisation managers cannot publish signs.
+- Glossary editors edit signs through the application, not Django admin.
+- Django admin is reserved for the platform admin.
+- CSRF protection and Django authentication are used.
 
-## Future work
+The role split may seem a little strict for a small prototype, but it makes sense for sign-language content. A manager can decide whether a request is relevant to their organisation, while a glossary editor or ISL reviewer should check the actual content.
 
-- Stronger production configuration for secrets, hosts, HTTPS, and deployment.
-- Email notification when requested signs are reviewed.
-- Audit logging for content changes and request decisions.
-- Data import/export.
-- Rich video embedding, captions, and media hosting.
-- Broader accessibility testing with Deaf users and ISL stakeholders.
-- Full multi-tenant SaaS operations.
+## Future Work
 
-## Thesis diagram sources
+Items deliberately left outside the core prototype:
+
+- production deployment settings
+- email notifications
+- stronger audit logging
+- import/export tools
+- proper video hosting and captions
+- broader accessibility testing with Deaf users and ISL stakeholders
+- full multi-tenant SaaS administration
+
+## Diagram Sources
 
 PlantUML source files are stored in `docs/diagrams/`:
 
-- `use-case.puml`: system actors and main use cases.
-- `erd.puml`: implemented Django data model.
-- `request-workflow.puml`: sign request triage and publication workflow.
-- `project-structure.puml`: server-rendered Django prototype structure.
+- `use-case.puml`: actors and main use cases
+- `erd.puml`: implemented Django data model
+- `request-workflow.puml`: request/report review workflow
+- `project-structure.puml`: Django project structure

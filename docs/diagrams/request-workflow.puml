@@ -15,12 +15,12 @@ else (Logged-in staff)
 endif
 
 :Create SignRequest;
-:Status = Pending manager review;
+:Status = Pending organisation-manager review;
 
-partition "Manager / glossary manager dashboard" {
+partition "Organisation manager dashboard" {
   :Review request context and suggested category;
   if (Suitable to progress?) then (Yes)
-    :Set status = Manager approved;
+    :Set status = Ready for glossary review;
   elseif (More detail needed?) then (Needs clarification)
     :Set status = Needs clarification;
   else (No)
@@ -28,11 +28,12 @@ partition "Manager / glossary manager dashboard" {
   endif
 }
 
-if (Manager approved?) then (Yes)
-  partition "Django admin / content review" {
-    :Interpreter or content reviewer checks sign need;
-    :Prepare official SignEntry if appropriate;
+if (Ready for glossary review?) then (Yes)
+  partition "Glossary editor workspace" {
+    :Glossary editor or ISL reviewer checks sign need;
+    :Open sign edit page if appropriate;
     :Add video URL, description, context, transcript metadata;
+    :Record change log entry;
     :Mark official sign as published;
     :Set request status = Completed;
   }
@@ -45,7 +46,7 @@ stop
 note right
 This workflow is a security-related design choice:
 staff and managers can request or triage signs,
-but official content publication stays in Django admin.
+but content editing is limited to glossary editors.
 end note
 
 @enduml

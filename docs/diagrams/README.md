@@ -11,6 +11,8 @@ Recommended diagrams to export:
 
 These diagrams describe the implemented prototype. Keep future-work items out of the diagrams unless they are clearly marked as future work in the thesis.
 
+The diagrams are source files rather than exported images so they can be updated if the model or workflow changes before submission.
+
 To render them, use the PlantUML VS Code extension or PlantUML command line:
 
 ```powershell

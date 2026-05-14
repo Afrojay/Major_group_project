@@ -1,42 +1,52 @@
 # ISL Glossary Platform
 
-Design and Development of an Adaptable Web-Based Irish Sign Language Glossary Platform for Domain-Specific Accessibility.
+Final-year B.Sc. Computing prototype: **Design and Development of an Adaptable Web-Based Irish Sign Language Glossary Platform for Domain-Specific Accessibility**.
 
-This Django prototype demonstrates an organisation-specific ISL glossary that can be adapted for contexts such as a college computing department, retail customer service team, or healthcare reception desk. It helps staff browse common signs, search service-specific terms, favourite useful signs, and request missing signs for manager review before interpreter/content follow-up.
+This project is a Django web application for small, organisation-specific Irish Sign Language glossary collections. The idea is not to build a national ISL dictionary. It is closer to a staff support tool for places such as a college department, a retail customer service desk, a healthcare reception area, or a public office where staff may need to recognise and practise a small set of useful signs.
 
-## Implemented prototype scope
+The project should be read as a prototype. It does not replace qualified interpreters, formal ISL teaching, Deaf awareness training, or clinical communication support. Some of the sample signs and video references are deliberately marked as needing review, which reflects the reality that sign-language content should not be treated casually.
 
-- Organisation-specific glossary landing pages
-- Categories linked to organisations
-- Sign entries with English term, category, description, usage context, tags, thumbnail URL, transcript support, official publication flag, and video URL
-- Search, A-Z filtering, category navigation, and browse within the selected organisation
-- Django staff login
-- Staff profiles linked to one organisation with staff, manager, and glossary manager roles
-- Staff dashboard with favourites, request history, recent signs, and role/domain panels
-- Simple portal items for prototype tasks, calendar notes, appointments, and access notes
-- Login redirects staff to their own organisation dashboard
-- Organisation dashboards show role/domain panels such as retail tasks, college calendar notes, healthcare reception checks, and manager to-dos
-- Staff favourites for signs in their own organisation
-- Staff and visitor missing-sign requests
-- Manager request review dashboard
-- Request statuses: Pending manager review, Needs clarification, Manager approved, Sent to interpreter, Completed, Rejected
-- Manager approval and interpreter notes on sign requests
-- Django admin content management
-- Progressive Vue enhancements for glossary search, favourites, request-form feedback, sign details, and staff dashboard summaries
+## Main Technologies
 
-## Not implemented
+- Python and Django for the backend
+- Django models for the main data structure
+- Django templates for server-rendered pages
+- Small Vue components for selected interactive parts of the staff-facing interface
+- Plain CSS for layout, responsive design and organisation colours
+- SQLite for the local prototype database
+- Django tests for the main workflows and access rules
 
-This is not a complete national ISL dictionary, a replacement for qualified ISL interpreters, a full ISL course, formal Deaf awareness training, or a production SaaS system. Production security hardening, audit logging, email automation, data export, billing, and full tenant administration remain future work.
+## What The Prototype Does
 
-Healthcare examples are included only as prototype service-access vocabulary. They are not clinical guidance and do not replace professional communication support.
+The application supports:
 
-The manager review flow is a security-related design choice. Managers can triage requests, but official sign publication remains in the Django admin back office so unvalidated glossary content is not published directly from the staff portal.
+- organisation-specific glossary pages
+- categories and sign entries
+- descriptions, tags, usage context and video URLs
+- search, category filtering and A-Z filtering
+- staff login
+- staff favourites
+- missing-sign requests
+- reports about existing signs, such as broken video links or unclear descriptions
+- manager request triage
+- a glossary editor queue
+- a sign edit page for glossary editors
+- publication and video review statuses
+- a simple change log for sign edits
+- platform administration through Django admin
 
-Organisation records support basic database-driven branding through theme colour, logo URL, description and contact email. This supports organisation-specific deployment while keeping advanced branding as future work.
+## Role Model
 
-Vue is integrated progressively inside Django templates rather than as a separate single-page application. See `docs/vue-integration.md` for the architectural notes and testing approach.
+The role model changed a bit during development. At first it was tempting to make an "organisation admin" do nearly everything, but that became confusing. The final version separates the work more clearly:
 
-## Run locally
+- **Platform admin**: uses Django admin for platform-level setup.
+- **Organisation manager**: checks whether staff/visitor requests are relevant to the organisation.
+- **Glossary editor / ISL reviewer**: edits sign content and reviews video/content status.
+- **Staff user**: searches, favourites, requests and reports signs.
+
+Only `platform_admin` uses the Django admin site. Managers and glossary editors use the normal application screens, which is easier to explain and avoids mixing Django's built-in `is_staff` flag with the project's own staff roles.
+
+## Run Locally
 
 ```powershell
 py -3.11 -m venv .venv
@@ -48,11 +58,35 @@ py -3.11 -m venv .venv
 
 Open `http://127.0.0.1:8000/`.
 
-## Useful commands
+## Demo Accounts
+
+All sample accounts created by `load_sample_data` use the password `prototype123`.
+
+| Username | Password | Purpose |
+| --- | --- | --- |
+| `platform_admin` | `prototype123` | Django admin / platform admin |
+| `college_staff` | `prototype123` | Normal staff user |
+| `college_manager` | `prototype123` | Organisation manager |
+| `college_glossary` | `prototype123` | Glossary editor |
+
+The retail and healthcare examples use the same pattern.
+
+## Useful Commands
 
 ```powershell
 .\.venv\Scripts\python.exe manage.py test
+.\.venv\Scripts\python.exe manage.py check
 .\.venv\Scripts\python.exe manage.py createsuperuser
 ```
 
-Demo accounts created by `load_sample_data` use the password `prototype123`. Each sample organisation has a staff account, such as `college_staff`, a manager account, such as `college_manager`, and a glossary manager account, such as `college_glossary`.
+## Documentation
+
+The `docs/` folder contains the notes I would use to explain the project design:
+
+- `architecture.md`: project structure and data model
+- `content-review-workflow.md`: requests, reports and glossary review
+- `frontend-implementation.md`: CSS, Vue and responsive interface decisions
+- `security-and-access-control.md`: roles, organisation scoping and security limitations
+- `accessibility-audit.md`: accessibility features and areas still needing work
+- `testing-and-submission.md`: tests, manual checks and submission notes
+- `diagrams/`: PlantUML diagram sources

@@ -24,7 +24,7 @@ node "Django project" {
 
   database "SQLite database\n(db.sqlite3)" as DB
   folder "templates/" as Templates
-  folder "static/glossary/" as Static
+  folder "static/glossary/\nCSS + Vue enhancements" as Static
   folder "docs/" as Docs
 }
 
@@ -42,7 +42,8 @@ Templates --> Static : CSS
 
 note bottom of App
 The prototype is intentionally server-rendered
-with Django templates and one local CSS layer.
+with Django templates, plain CSS and small
+Vue components for progressive enhancement.
 end note
 
 @enduml
