@@ -14,6 +14,7 @@ The project should be read as a prototype. It does not replace qualified interpr
 - Small Vue components for selected interactive parts of the staff-facing interface
 - Plain CSS for layout, responsive design and organisation colours
 - SQLite for the local prototype database
+- PostgreSQL for the Render deployment database
 - Django tests for the main workflows and access rules
 
 ## What The Prototype Does
@@ -34,6 +35,16 @@ The application supports:
 - publication and video review statuses
 - a simple change log for sign edits
 - platform administration through Django admin
+
+## Publication and Review Status
+
+The prototype separates **sign records that exist in the database** from **signs that are publicly visible**.
+
+Some sample signs are deliberately marked as needing video/content review. Public visitors only see signs with a published status. This means an organisation page may show categories but display zero public signs if the seeded signs are still unpublished or marked as needing review.
+
+This is intentional for the prototype and supports the project argument: ISL glossary content should not be treated as official until it has been reviewed. Staff, managers, glossary editors and platform administrators can use the staff/admin workflows to review, report, edit and publish signs.
+
+For a public demonstration, signs can be published through the glossary editor workflow or Django admin. For thesis discussion, this behaviour should be explained as a quality-control feature rather than a missing-data error.
 
 ## Role Model
 
@@ -78,6 +89,34 @@ The retail and healthcare examples use the same pattern.
 .\.venv\Scripts\python.exe manage.py check
 .\.venv\Scripts\python.exe manage.py createsuperuser
 ```
+
+## Render Deployment Notes
+
+The Render deployment uses PostgreSQL rather than SQLite so data persists between deployments. The build command should install dependencies, collect static files, run migrations and load sample data.
+
+Recommended Render build command:
+
+```bash
+python -m pip install --upgrade pip && pip install -r requirements.txt && python manage.py collectstatic --no-input && python manage.py migrate && python manage.py load_sample_data
+```
+
+Recommended Render start command:
+
+```bash
+gunicorn isl_glossary_platform.wsgi:application
+```
+
+Required environment variables include:
+
+```txt
+DATABASE_URL=<Render PostgreSQL internal database URL>
+SECRET_KEY=<long random secret key>
+DEBUG=False
+ALLOWED_HOSTS=<your-render-domain.onrender.com>
+CSRF_TRUSTED_ORIGINS=https://<your-render-domain.onrender.com>
+```
+
+If the public glossary appears empty after deployment, first check whether the signs are intentionally unpublished or marked as needing review. Log in as `platform_admin` or a glossary editor to inspect the sign records and publication statuses.
 
 ## Documentation
 
