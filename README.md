@@ -42,7 +42,14 @@ The prototype separates **sign records that exist in the database** from **signs
 
 Some sample signs are deliberately marked as needing video/content review. Public visitors only see signs with a published status. This means an organisation page may show categories but display zero public signs if the seeded signs are still unpublished or marked as needing review.
 
-This is intentional for the prototype and supports the project argument: ISL glossary content should not be treated as official until it has been reviewed. Staff, managers, glossary editors and platform administrators can use the staff/admin workflows to review, report, edit and publish signs.
+This is intentional for the prototype and supports the project argument: ISL glossary content should not be treated as official until it has been reviewed.
+
+The review permissions are deliberately separated:
+
+- **Staff users** can browse signs, favourite signs, request missing signs, and report problems with existing signs.
+- **Organisation managers** can triage staff and visitor requests, for example by deciding whether a request is relevant to the organisation.
+- **Glossary editors / ISL reviewers** can inspect, edit, review, and publish sign content through the glossary editor workflow.
+- **Platform admins** can manage all records through Django admin.
 
 For a public demonstration, signs can be published through the glossary editor workflow or Django admin. For thesis discussion, this behaviour should be explained as a quality-control feature rather than a missing-data error.
 
